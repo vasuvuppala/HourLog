@@ -1,0 +1,298 @@
+--
+-- migrate events i.e. changes in facility status, breakdowns experiments, sources etc
+--
+drop procedure if exists migrate_events;
+create procedure migrate_events(IN base_num INTEGER)
+begin
+	-- set @BASE_CHANGE_NUM = 60000;
+	truncate source_event;
+	truncate facility_status_event;
+	truncate vault_event;
+	truncate expr_event;
+	truncate mode_event;
+	truncate beam_event;
+	truncate breakdown_event; 
+	
+	-- compare a log entry with the previous one using row numbers (snum)
+	set @row := 0;
+	drop table if exists temp_log;
+	create table temp_log select l.*, @row := @row + 1 as snum from HourLog.logDetails l where l.experiment_number in (select number from experiment) order by ocrDateTime asc; 
+	insert into temp_log(snum) value(0); /* to get initial events */
+    alter table temp_log add column reported_at DATETIME;
+	alter table temp_log add unique index(snum), add unique index(id);
+	
+	-- fix log entries for which noteID is 0 but they have notes in log changes
+    select 'fixing log entries for which noteID is 0 but they have notes in log changes ..';
+	update temp_log e
+       set noteID = (select base_num + noteID from HourLog.logChanges l 
+                   where l.logId = e.id AND l.noteID != 0 
+                   ORDER BY l.changedDate DESC LIMIT 1)
+	where e.noteID = 0;
+	
+    -- fix the reporting times for logs that have edits
+    select 'fixing the reporting times for logs that have edits ...' 
+    drop table if exists temp_reptime;
+    create table temp_reptime select logId, max(changedDate) as reported_at from HourLog.logChanges group by logId;
+    alter table temp_reptime add index(logId);
+    update temp_log l LEFT JOIN temp_reptime r ON l.id = r.logId
+       set l.reported_at = r.reported_at;
+	drop table temp_reptime;
+    
+    -- fix log entries that do not have notes at all
+    set @blank_note_ := 0;
+    
+    -- Temp table for calculating reported time for obsoleted logs
+	drop table if exists temp_chg2;
+    set @row := 0;
+	create table temp_chg2 select c.*, @row := @row + 1 as rownum 
+      from HourLog.logChanges c 
+      INNER JOIN experiment e ON c.experiment_number = e.number
+      ORDER BY c.logId DESC, c.changedDate DESC;
+	-- update temp_chg2 set id = id + @BASE_CHANGE_NUM;
+	alter table temp_chg2 add index(rownum), add index(logId);
+        
+    --	insert obsoleted events  
+    drop table if exists temp_chg;    
+    create table temp_chg 
+       select t1.*,IF(t2.changedDate is  NULL, t1.ocrDateTime, t2.changedDate) as reported_at, 
+             d.noteID as parentNoteID         
+       from temp_chg2 t1 
+       LEFT JOIN temp_chg2 t2 ON t1.logId = t2.logId AND t1.rownum + 1 = t2.rownum         
+       INNER JOIN temp_log d ON t1.logId = d.id;
+              
+	-- Temp table for comparing log changes with the previous log entry
+	drop table if exists temp_chg;
+	create table temp_chg select c.*, snum from HourLog.logChanges c, temp_log t, experiment e where t.id = c.logId and c.experiment_number = e.number;
+	-- update temp_chg set id = id + @BASE_CHANGE_NUM;
+	alter table temp_chg add index(snum);
+	
+	-- for converting breakdown status columns to rows
+	drop table if exists temp_brk;
+	create table temp_brk(num int, name varchar(32));
+	insert into temp_brk(num,name) values (1,'rfStatus'), (2,'vacStatus'), (3,'daqStatus'), (4,'psStatus'), (5,'ctlStatus'), (6,'utlStatus'), (7,'cryStatus'), (8,'safStatus'), (9,'othStatus'), (10,'detStatus'), (11,'magStatus'), (12,'ecrStatus'), (13,'motStatus'), (14,'dflStatus');
+	
+	call migrate_current_events();
+	call migrate_obsolete_events(base_num);
+	-- drop table temp_log, temp_chg, temp_brk;
+	
+	select 'Events without log entry = ', count(*) from event where note is null;	
+	select 'Migrated', count(*), 'facility status events' from facility_status_event;
+	select 'Migrated', count(*), 'source events'  from source_event;
+	select 'Migrated', count(*), 'vault events' from vault_event;
+	select 'Migrated', count(*), 'experiment events' from expr_event;
+	select 'Migrated', count(*), 'mode events'  from mode_event;
+	select 'Migrated', count(*), 'beam events'  from beam_event;
+	select 'Migrated', count(*), 'breakdown events'  from breakdown_event;
+	
+end	
+##
+--
+-- Migrate current events
+drop procedure if exists migrate_current_events;
+create procedure migrate_current_events()
+begin
+	declare noFstatOldValid,noFstatOldAll,noFstatNew INT default 0;	
+	declare no_more_rows BOOLEAN default FALSE;
+	declare c_num INT;
+	declare c_name VARCHAR(32);
+	declare cur1 cursor for select num, name from temp_brk;
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;		
+	
+	-- all events (not all are necessary. the extraneous ones will be deleted later)	
+    insert into event(event_id,facility,author,occurred_at,reported_at,note)  
+	  select l.id, 1, l.userID, l.ocrDateTime, l.reported_at, noteID
+	  from temp_log l where l.snum > 0;
+	  
+	-- fix the reported times for events that have edits
+    -- update event e
+       -- set reported_at = (select max(changedDate) from HourLog.logChanges l where l.logId = e.event_id)
+	-- where e.event_id in (select logId from HourLog.logChanges);
+	
+	-- facility status events
+    insert into facility_status_event(facility_status,event)  
+	  select b.summary,b.id from temp_log a, temp_log b where a.snum = b.snum - 1 and not a.summary <=> b.summary;
+
+	-- source events
+	insert into source_event(source,event)  
+	  select b.source, b.id from temp_log a, temp_log b where a.snum = b.snum - 1 and not a.source <=> b.source;
+	
+	-- vault events  
+	insert into vault_event(vault,event)  
+	  select b.vault, b.id from temp_log a, temp_log b where a.snum = b.snum - 1 and not a.vault <=> b.vault;
+
+	-- mode events
+	insert into mode_event(mode,event)  
+	  select b.mode, b.id from temp_log a, temp_log b where a.snum = b.snum - 1 and not a.mode <=> b.mode;
+
+	-- experiment events
+	insert into expr_event(experiment,event)  
+	  select b.experiment_number, b.id from temp_log a, temp_log b where a.snum = b.snum - 1 and not a.experiment_number <=> b.experiment_number;
+	
+    -- beam events
+	insert into beam_event(beam_system,beam,event) 
+	   select 1, IF(b.k500Beam = 0, NULL, b.k500Beam), b.id from temp_log a, temp_log b where a.snum = b.snum - 1 and not a.k500Beam <=> b.k500Beam;
+	
+    insert into beam_event(beam_system,beam,event) 
+	   select 2, IF(b.k1200Beam = 0, NULL, b.k1200Beam), b.id from temp_log a, temp_log b where a.snum = b.snum - 1 and not a.k1200Beam <=> b.k1200Beam;
+	
+	-- needs only comparison with element and massnumber. rest may be taken out
+	insert into beam_event(beam_system,element,charge,energy,mass_number,event) 
+	   select 3,IF(b.a1900Element = 0,NULL,b.a1900Element), b.a1900Charge, b.a1900Energy, b.a1900MassNumber, b.id 
+	   from temp_log a, temp_log b where a.snum = b.snum - 1 and not (a.a1900Energy <=> b.a1900Energy and a.a1900MassNumber <=> b.a1900MassNumber and a.a1900Element <=> b.a1900Element and a.a1900Charge <=> b.a1900Charge);	   
+	
+	-- breakdown events	
+	open cur1;
+	brk_loop: loop
+	    fetch cur1 into c_num, c_name;
+		if (no_more_rows) then
+		    leave brk_loop;
+		end if;
+		set @stmt := concat('insert into breakdown_event(category,status,event) select ', c_num, ', b.', c_name, ', b.id from temp_log a, temp_log b where a.snum = b.snum - 1 and not a.',c_name,' <=> b.', c_name);
+		-- select @stmt as 'Query';
+		prepare insert_brkevents from @stmt;
+        execute insert_brkevents;
+	end loop;
+	close cur1;
+end
+##
+--
+-- Migrate changed events
+drop procedure if exists migrate_obsolete_events;
+create procedure migrate_obsolete_events(IN base_num INTEGER)
+begin
+	declare no_more_rows BOOLEAN default FALSE;
+	declare c_num INT;
+	declare c_name VARCHAR(32);
+	declare cur1 cursor for select num, name from temp_brk;
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;		
+	      
+    --	insert obsoleted events    
+    insert into event(event_id,facility,obsoleted_by,author,occurred_at,reported_at,note)
+       select base_num + t1.id, 1, t1.logId, t1.userID, t1.ocrDateTime,t1.reported_at, t1.newNoteID                      
+       from temp_chg t1;      
+    
+	--insert into event(event_id,facility,obsoleted_by,author,occurred_at,reported_at,note)  
+    --    select base_num + l.id, 1, l.logId, l.userID,l.ocrDateTime,l.changedDate, d.note		     
+    --    from  HourLog.logChanges l  
+    --        INNER JOIN temp_log d ON l.logId = d.id;
+			   
+	-- facility status events
+    insert into facility_status_event(facility_status,event)  
+	  select b.summary,b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.summary <=> b.summary;
+
+	-- source events
+	insert into source_event(source,event)  
+	  select b.source, b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.source <=> b.source;
+	
+	-- vault events  
+	insert into vault_event(vault,event)  
+	  select b.vault, b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.vault <=> b.vault;
+
+	-- mode events
+	insert into mode_event(mode,event)  
+	  select b.mode, b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.mode <=> b.mode;
+
+	-- experiment events
+	insert into expr_event(experiment,event)  
+	  select b.experiment_number, b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.experiment_number <=> b.experiment_number;
+	
+    -- beam events
+	insert into beam_event(beam_system,beam,event) 
+	   select 1, IF(b.k500Beam = 0, NULL, b.k500Beam), b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.k500Beam <=> b.k500Beam;
+	
+    insert into beam_event(beam_system,beam,event) 
+	   select 2, IF(b.k1200Beam = 0, NULL, b.k1200Beam), b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.k1200Beam <=> b.k1200Beam;
+	
+	insert into beam_event(beam_system,element,charge,energy,mass_number,event) 
+	   select 3,IF(b.a1900Element = 0,NULL,b.a1900Element), b.a1900Charge, b.a1900Energy, b.a1900MassNumber, b.id 
+	   from temp_log a, temp_chg b where a.snum = b.snum - 1 and not (a.a1900Energy <=> b.a1900Energy or a.a1900MassNumber <=> b.a1900MassNumber or a.a1900Element <=> b.a1900Element or a.a1900Charge <=> b.a1900Charge);	   
+	
+	-- breakdown events	
+	open cur1;
+	brk_loop: loop
+	    fetch cur1 into c_num, c_name;
+		if (no_more_rows) then
+		    leave brk_loop;
+		end if;
+		set @stmt := concat('insert into breakdown_event(category,status,event) select ', c_num, ', b.', c_name, ', b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.',c_name,' <=> b.', c_name);
+		-- select @stmt as 'Query';
+		prepare insert_brkevents from @stmt;
+        execute insert_brkevents;
+	end loop;
+	close cur1;
+end
+##
+--
+-- Migrate changed events
+drop procedure if exists migrate_obsolete_events;
+create procedure migrate_obsolete_events(IN base_num INTEGER)
+begin
+	declare no_more_rows BOOLEAN default FALSE;
+	declare c_num INT;
+	declare c_name VARCHAR(32);
+	declare cur1 cursor for select num, name from temp_brk;
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;		
+	      
+    --	insert obsoleted events    
+    insert into event(event_id,facility,obsoleted_by,author,occurred_at,reported_at,note)
+       select base_num + t1.id, 1, t1.logId, t1.userID, t1.ocrDateTime,t1.reported_at, t1.newNoteID                      
+       from temp_chg t1;      
+       
+    -- consolidated table with all logs and changes
+	create table temp_t3
+       select base_num + id as id, changedDate, logId, ocrDateTime, beamQuality, rtStatus, scStatus, inj5Status, inj12Status, k5Status, nLineStatus, k12Status, a19Status, expStatus, rtActivity, scActivity, inj5Activity, inj12Activity, k5Activity, nLineActivity, k12Activity, a19Activity, expActivity, rfStatus, vacStatus, daqStatus, psStatus, ctlStatus, utlStatus, cryStatus, safStatus, othStatus, mode, source, vault, noteID, summary, experimentID, userID, k500Beam, k1200Beam, a1900Energy, a1900MassNumber, a1900Element, a1900Charge, detStatus, magStatus, experiment_number, ecrStatus, dflStatus, motStatus from temp_chg
+    UNION ALL
+       select id, entered_at, id, ocrDateTime, beamQuality, rtStatus, scStatus, inj5Status, inj12Status, k5Status, nLineStatus, k12Status, a19Status, expStatus, rtActivity, scActivity, inj5Activity, inj12Activity, k5Activity, nLineActivity, k12Activity, a19Activity, expActivity, rfStatus, vacStatus, daqStatus, psStatus, ctlStatus, utlStatus, cryStatus, safStatus, othStatus, mode, source, vault, noteID, summary, experimentID, userID, k500Beam, k1200Beam, a1900Energy, a1900MassNumber, a1900Element, a1900Charge, detStatus, magStatus, experiment_number, ecrStatus, dflStatus, motStatus from temp_log;
+
+    set @row := 0;
+    create table temp_all select t.*, @row := @row + 1 as snum from temp_t3 t order by changedDate desc;
+	drop table temp_t3;
+    
+	-- facility status events
+    insert into facility_status_event(facility_status,event)  
+	  select b.summary,b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.summary <=> b.summary;
+
+	-- source events
+	insert into source_event(source,event)  
+	  select b.source, b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.source <=> b.source;
+	
+	-- vault events  
+	insert into vault_event(vault,event)  
+	  select b.vault, b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.vault <=> b.vault;
+
+	-- mode events
+	insert into mode_event(mode,event)  
+	  select b.mode, b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.mode <=> b.mode;
+
+	-- experiment events
+	insert into expr_event(experiment,event)  
+	  select b.experiment_number, b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.experiment_number <=> b.experiment_number;
+	
+    -- beam events
+	insert into beam_event(beam_system,beam,event) 
+	   select 1, IF(b.k500Beam = 0, NULL, b.k500Beam), b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.k500Beam <=> b.k500Beam;
+	
+    insert into beam_event(beam_system,beam,event) 
+	   select 2, IF(b.k1200Beam = 0, NULL, b.k1200Beam), b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.k1200Beam <=> b.k1200Beam;
+	
+	insert into beam_event(beam_system,element,charge,energy,mass_number,event) 
+	   select 3,IF(b.a1900Element = 0,NULL,b.a1900Element), b.a1900Charge, b.a1900Energy, b.a1900MassNumber, b.id 
+	   from temp_log a, temp_chg b where a.snum = b.snum - 1 and not (a.a1900Energy <=> b.a1900Energy or a.a1900MassNumber <=> b.a1900MassNumber or a.a1900Element <=> b.a1900Element or a.a1900Charge <=> b.a1900Charge);	   
+	
+	-- breakdown events	
+	open cur1;
+	brk_loop: loop
+	    fetch cur1 into c_num, c_name;
+		if (no_more_rows) then
+		    leave brk_loop;
+		end if;
+		set @stmt := concat('insert into breakdown_event(category,status,event) select ', c_num, ', b.', c_name, ', b.id from temp_log a, temp_chg b where a.snum = b.snum - 1 and not a.',c_name,' <=> b.', c_name);
+		-- select @stmt as 'Query';
+		prepare insert_brkevents from @stmt;
+        execute insert_brkevents;
+	end loop;
+	close cur1;
+end
+##
+
+

@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:remove> ---------------------------------- Log History --------------------</ui:remove>  
+    <p:dialog id="notesHistoryPanel"  widgetVar="notesHistoryWid" header="Log History" width="95%" hideEffect="clip" dynamic="true">       
+        <h:form id="notesHistoryForm" >
+
+            <p:dataTable id="logHistoryTable" var="histLogEnt" value="#{notesView.editedLogEntries}"  
+                         paginator="false"  resizableColumns="true"   rowIndexVar="rowIndex"                                 
+                         scrollable="true" emptyMessage="No edit history! How could you lose it?"> 
+                <p:column headerText="Entry Time" width="10%" styleClass="logColumn">                                       
+                    <h:outputText value="#{histLogEnt.logEntry.enteredAt}" >
+                        <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.logHistoryDateFormat}"/>
+                    </h:outputText>   
+                </p:column>
+                <p:column headerText="Occurrence Time" width="10%" styleClass="logColumn">
+                    <h:outputText value="#{histLogEnt.logEntry.occurredAt}" >
+                        <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.logHistoryDateFormat}"/>
+                    </h:outputText>
+                </p:column>
+                <p:column headerText="Author" width="10%">
+                    <h:outputText value="#{histLogEnt.logEntry.sysuser.firstName} #{histLogEnt.logEntry.sysuser.lastName}"/> 
+                </p:column>
+                <p:column headerText="Notes" >
+                    <h:outputText value="#{histLogEnt.logEntry.logText}" escape="false"/>
+                    <p:panel styleClass="plainPanel" rendered="#{not empty histLogEnt.logEntry.artifactList}" >
+                        <h:outputText value="Artifacts: "/> 
+                        <ui:repeat var="art" value="#{histLogEnt.logEntry.artifactList}" >                      
+                            <h:outputLink value="#{appProperties.TR_URL}/#{art.resourceId}"   
+                                          target="_blank" rendered="#{art.type == 't'}" >                       
+                                <h:outputText value="#{art.name} "/>
+                            </h:outputLink>
+                            <p:link href="#{appProperties.LOGBOOK_ATTACHMENT_URL}/#{histLogEnt.logEntry.logEntryId}/#{art.resourceId}"  value=" #{art.name}"  
+                                    rendered="#{art.type == 'd'}" />
+                            <p:spacer width="5" />
+                        </ui:repeat> 
+                    </p:panel>
+                </p:column>
+            </p:dataTable>
+            <h:outputText value="*Entry Time is the time the log entry was entered into the system whereas Occurrence Time is the time an event occurred as reported by the author."/>
+        </h:form>
+    </p:dialog>      
+</ui:composition>

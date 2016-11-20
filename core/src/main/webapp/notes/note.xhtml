@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <!-- notesForm is updated from backing bean so do not change the names! -->
+    <h:form id="notesForm"> 
+        <p:poll interval="#{msgs.refreshRate}" listener="#{notesView.checkNewData()}" rendered="true"/>
+
+        <p:dataTable id="notesTable" var="logent" value="#{notesView.lazyLog}"   
+                     liveScroll="false" scrollRows="#{msgs.logsScrollRows}" scrollable="false" scrollHeight="#{msgs.logsScrollWindow}"                 
+                     paginator="true" rows="#{msgs.logsScrollRows}"
+                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                     lazy="true" > 
+
+            <p:column headerText="Date" width="12%" >               
+                <h:outputText id="logDay" value="#{logent.logEntry.occurredAt}" >
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.logHistoryDateFormat}"/>
+                </h:outputText>              
+
+                <p:commandLink id="historyLink" title="show edits" oncomplete="PF('notesHistoryWid').show();"  
+                               styleClass="ui-icon ui-icon-newwin blueIcon iconDisplay" process="@this" update=":notesHistoryForm"
+                               action="#{notesView.findLogHistory(logent)}" 
+                               rendered="#{not empty logent.logEntry.logEntryList}" />
+                <p:blockUI block="notesTable" trigger="historyLink" >          
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                </p:blockUI>
+
+            </p:column>
+            <p:column headerText="Author" width="10%">
+                <h:outputText value="#{logent.logEntry.sysuser.firstName} #{logent.logEntry.sysuser.lastName}"/> 
+            </p:column>
+            <p:column headerText="Logbook" width="10%">
+                <h:outputText value="#{logent.logEntry.logbook.logbookName}"/> 
+            </p:column>
+            <p:column headerText="Notes" >
+                <h:outputText value="#{logent.logEntry.logText}" escape="false"/>
+                <p:panel  rendered="#{not empty logent.logEntry.artifactList}" styleClass="eventInfo" >
+                    <h:outputText value="Attachments: " styleClass="newEventTitle"/> 
+                    <ui:repeat var="art" value="#{logent.logEntry.artifactList}" >                       
+                        <p:link href="#{appProperties.TR_URL}/#{art.resourceId}" value=" #{art.name}"  
+                                target="_blank" rendered="#{art.type == 't'}" />                      
+                        <p:link href="#{appProperties.LOGBOOK_ATTACHMENT_URL}/#{logent.logEntry.logEntryId}/#{art.resourceId}"  value=" #{art.name}"  
+                                rendered="#{art.type == 'd'}" />
+                        <p:spacer width="5" />
+                    </ui:repeat> 
+                </p:panel>
+                <p:panel styleClass="eventInfo" rendered="#{not empty logent.event.beamEventList}">                
+                    <h:outputText value="Beams  " styleClass="newEventTitle"/>
+                    <ui:repeat var="bevent" value="#{logent.event.beamEventList}" >                              
+                        <h:outputText value=" #{bevent.beamSystem.name}: " />
+                        <h:outputText value=" &lt;SUP&gt;#{bevent.beam.massNumber}&lt;/SUP&gt; #{bevent.beam.element.symbol} &lt;SUP&gt;#{bevent.beam.charge}&lt;/SUP&gt;-#{bevent.beam.energy} " 
+                                      rendered="#{not empty bevent.beam}" styleClass="newEvent" escape="false"/>                                                                                                                       
+                        <h:outputText value=" &lt;SUP&gt;#{bevent.massNumber}&lt;/SUP&gt; #{bevent.element.symbol}  " 
+                                      rendered="#{empty bevent.beam and not empty bevent.massNumber}" styleClass="newEvent" escape="false"/>   
+                        <h:outputText value=" None " 
+                                      rendered="#{empty bevent.beam and empty bevent.massNumber}" styleClass="newEvent" />
+                    </ui:repeat>
+                </p:panel>
+                <p:panel styleClass="eventInfo" rendered="#{not empty logent.event.exprEventList}">                
+                    <h:outputText value="Experiment: " styleClass="newEventTitle"/>
+                    <h:outputText value="#{logent.snapshot.experiment.spokesperson}-#{logent.snapshot.experiment.title}" styleClass="newEvent"/>                  
+                </p:panel>
+            </p:column>     
+
+            <f:facet name="footer">
+                <h:outputText value="showing entries from " styleClass="tableFooter"/>
+                <h:outputText  value="#{notesView.endDate == null? notesView.maxDate: notesView.endDate}" styleClass="tableFooter">
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText> 
+                <h:outputText value=" through " styleClass="tableFooter"/>
+                <h:outputText  value="#{notesView.startDate == null? notesView.minDate: notesView.startDate}" styleClass="tableFooter">
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>                                            
+            </f:facet>
+        </p:dataTable>        
+    </h:form> 
+</ui:composition>

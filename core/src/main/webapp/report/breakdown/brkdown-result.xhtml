@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"               
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html" >
+
+    <h:form id="BrkRepResult">  
+        <h:outputText value="#{msgs.title}: Breakdown Report" styleClass="heading"/>
+        
+        <h:outputText value="No data was found for this report" rendered="#{empty breakdownReportView.reportItemList}"/>
+        
+        <p:panel id="breakdownResult" toggleable="true" closable="true" rendered="#{not empty breakdownReportView.reportItemList}">
+            <f:facet name="header">
+                <h:outputText value="Breakdown Report For #{breakdownReportView.selectedFacility.description} From " />                                    
+                <h:outputText value="#{breakdownReportView.reportStartDate}" >
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+                <h:outputText value=" To " />
+                <h:outputText value="#{breakdownReportView.reportEndDate}" >
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+
+            </f:facet>
+            <f:facet name="footer"> 
+                <h:outputText value="Generated on " />
+                <h:outputText value="#{breakdownReportView.reportDate}"> 
+                    <f:convertDateTime timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+                <p:commandButton value="Print" type="button" icon="ui-icon-print"  style="float: right;" >
+                    <p:printer target="breakdownResult" />
+                </p:commandButton>
+
+            </f:facet>
+
+            <p:panelGrid columns="1" styleClass="noBorders">
+                <p:row>
+                    <p:column>
+                        <p:panelGrid columns="2" styleClass="noBorders">
+                            <p:chart type="pie" model="#{breakdownReportView.pieModel}"  style="height: 500px; width: 400px;" />
+                            <p:chart type="bar" model="#{breakdownReportView.barModel}"  style="height: 500px; width: 600px;"/>
+                        </p:panelGrid>
+                    </p:column>
+                </p:row>
+
+                <p:row>
+                    <p:column colspan="2">
+                        <p:dataTable id="hoursTable" value="#{breakdownReportView.reportItemList}" var="ri">
+                            <f:facet name="header">
+                                Breakdown Hours
+                            </f:facet>
+                            <p:column headerText="Name" sortBy="#{ri.name}">
+                                <h:outputText value="#{ri.name}" />
+                            </p:column>
+                            <p:column headerText="Description">
+                                <h:outputText value="#{ri.description}" />
+                            </p:column>
+                            <p:column headerText="Number" styleClass="alignRight" sortBy="#{ri.occurrences}">
+                                <h:outputText value="#{ri.occurrences}" />
+                            </p:column>
+                            <p:column headerText="Hours" styleClass="alignRight" sortBy="#{ri.hours}">
+                                <h:outputText value="#{ri.hours}" >
+                                    <f:convertNumber pattern="#,###,##0.00"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="Percent" styleClass="alignRight" sortBy="#{ri.percentage}">
+                                <h:outputText value="#{ri.percentage}" >
+                                    <f:convertNumber pattern="#,###,##0.00"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="Average" styleClass="alignRight" >
+                                <h:outputText value="#{ri.occurrences == 0 ? ' ' : ri.hours / ri.occurrences}" >
+                                    <f:convertNumber pattern="#,###,##0.00"/>
+                                </h:outputText>
+                            </p:column>
+                        </p:dataTable>
+                        <h:commandLink title="Export to Excel">  
+                            <p:graphicImage value="#{resource['images/excel.png']}" />                      
+                            <p:dataExporter type="xls"  target="hoursTable" fileName="HL2-break-report" />  
+                        </h:commandLink>  
+                        <h:commandLink title="Export to CSV">  
+                            <p:graphicImage value="#{resource['images/csv.png']}" />  
+                            <p:dataExporter type="csv" target="hoursTable" fileName="HL2-break-report"  /> 
+                        </h:commandLink>  
+                        <h:commandLink title="Export to XML">  
+                            <p:graphicImage value="#{resource['images/xml.png']}" />  
+                            <p:dataExporter type="xml" target="hoursTable" fileName="HL2-break-report" />  
+                        </h:commandLink>
+                    </p:column>
+                </p:row>
+            </p:panelGrid>
+        </p:panel>                 
+    </h:form>
+</ui:composition>

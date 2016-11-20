@@ -1,0 +1,17 @@
+#!/bin/bash
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:`pwd`
+LOGFILE=/tmp/hl-stress-test-prod.log
+#LOGFILE=/dev/stdout
+url=https://controls.nscl.msu.edu/hourlog/api/rest/v0.1.0/reports/summary
+
+date > $LOGFILE
+let i=0
+while (true); do
+   echo "iteration: $i" > $LOGFILE
+   api-test.curl $url >> $LOGFILE 2>&1
+   let i++ 
+   sleep 3
+done
+
+

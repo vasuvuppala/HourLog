@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:remove> ---------------------------------- Log Detail --------------------</ui:remove>  
+    <h:outputText value="Strange, no shift information found!" rendered="#{empty logent.shift}" />
+    <p:panelGrid  rendered="#{not empty logent.shift}">
+        <p:row>
+            <p:column>
+                <h:outputText value="Log Occurred At" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{logent.logEntry.occurredAt}" >
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>    
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <h:outputText value="Log Entered At" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{logent.logEntry.enteredAt}" >
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>    
+            </p:column>
+        </p:row>
+
+        <ui:repeat var="bevent" value="#{logent.snapshot.beams}" >
+            <p:row>
+                <p:column>
+                    <h:outputText value="#{bevent.beamSystem.name}" />
+                </p:column>
+                <p:column>
+                    <h:outputText value="&lt;SUP&gt;#{bevent.beam.massNumber}&lt;/SUP&gt; #{bevent.beam.element.symbol}&lt;SUP&gt;#{bevent.beam.charge}&lt;/SUP&gt; #{bevent.beam.energy}" 
+                                  escape="false" rendered="#{not empty bevent.beamSystem.beamList}"/>
+                    <h:outputText value="&lt;SUP&gt;#{bevent.massNumber}&lt;/SUP&gt; #{bevent.element.symbol} &lt;SUP&gt;#{bevent.charge}&lt;/SUP&gt; #{bevent.energy}" 
+                                  escape="false" rendered="#{empty bevent.beamSystem.beamList}"/>
+                </p:column>
+            </p:row>
+        </ui:repeat>
+
+        <p:row>
+            <p:column>
+                <h:outputText value="Shift Updated At" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{logent.shift.updatedAt}" >
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <h:outputText value="Shift Updated By" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{logent.shift.updatedBy.firstName} #{logent.shift.updatedBy.lastName}" />
+
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <h:outputText value="Operator In-Charge" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{logent.shift.opInCharge.firstName} #{logent.shift.opInCharge.lastName}" />
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <h:outputText value="Experimenter In-Charge" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{logent.shift.expInCharge}" />
+            </p:column>
+        </p:row>
+
+        <ui:repeat var="staff" value="#{logent.shift.shiftStaffMemberList}" >
+            <p:row>
+                <p:column>
+                    <h:outputText value="#{staff.role.name}" />
+                </p:column>
+                <p:column>
+                    <h:outputText value="#{staff.staffMember.firstName} #{staff.staffMember.lastName}" />
+                </p:column>
+            </p:row>
+        </ui:repeat>
+    </p:panelGrid>          
+</ui:composition>

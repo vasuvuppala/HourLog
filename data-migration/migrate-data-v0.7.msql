@@ -1,0 +1,602 @@
+-- 
+-- Hour Log Data Migration
+--
+use HourLog2;
+
+delimiter ##
+--
+--
+drop procedure if exists clean_all;
+create procedure clean_all()
+begin
+    
+    truncate staff_role;	
+	truncate beam;
+	truncate shift_staff_member;
+	truncate shift;
+	truncate artifact;
+	truncate breakdown_event;
+	
+	truncate log_entry;
+	
+	truncate facility_status;
+	truncate beam_system;
+	truncate element;
+	truncate operations_role;
+	truncate shift_status;	
+	truncate logbook;
+	truncate experiment;
+	truncate vault;
+	truncate source;
+	truncate mode;
+	truncate facility;
+	truncate sysuser;
+end
+##
+--
+--
+drop procedure if exists create_base;
+create procedure create_base()
+begin
+    insert into facility(facility_id,facility_name,description) values 
+	  (1,'CCF','Coupled Cyclotron Facility'), 
+	  (2,'ReA','Re-Accelerator');	
+	insert into beam_system(beam_system_id,name,facility,description) values 
+	  (1,'K500',1,'K500 Cyclotron'), 
+	  (2,'K1200',1,'K1200 Cyclotron'),
+	  (3,'A1900',1,'Fragment Separator'),
+	  (4,'ReA',2,'ReA');
+	insert into shift_status(status_id,name,description) values 
+	  (1,'on shift','On Shift'), 
+	  (2,'on call','On Call'),
+	  (3,'in house','In House');	
+	
+    insert into experiment(number,a1900_contact,approval_date,completion_date,description,
+                 experiment_completed,hours_approved,hours_requested,on_target_hours,PAC,spokesperson,title)
+           select exp_number,A1900Contact,approvedDate,completion_date,description,
+                 completed,hoursApproved,hoursRequested,hoursBeamOnTarget,PAC,spokesperson,title
+           from ApprovedExperiments.Experiments;			
+		   
+    insert into logbook(logbook_id,logbook_name,facility,description,default_log) values 
+	  (1,'CCF-Operations',1,'CCF Operations Logbook',true), 
+	  (2,'ReA-Operations',2,'ReA Operations Logbook',true);
+	  
+	insert into operations_role(op_role_id,name,description) values 
+	  (1,'Operator','Operator'), 
+	  (2,'Source Physicist','Source Physicist'),
+	  (3,'Beam Physicist','Beam Physicist'),
+	  (4,'Device Physicist','Device Physicist'),
+	  (5,'Cryogenics Engineer','Cryogenics Engineer'),
+	  (6,'Beam Coordinator','Beam Coordinator'),
+	  (7,'Maintenance Engineer','Maintenance Engineer');	
+	  
+	
+    insert into facility_status(status_id,name,description)  
+	  select id,abbr,description from HourLog.summaries;
+	  
+	insert into vault(vault_id,name,description)  
+	  select id,abbr,description from HourLog.vaults;
+	
+	insert into source(source_id,facility,name,description)  
+	  select id,1,abbr,description from HourLog.sources;
+	  
+	insert into mode(mode_id,name,description)  
+	  select id,abbr,description from HourLog.modes;
+	  
+	select 'Created ', count(*), 'facilities' from facility;
+	select 'Created ', count(*), 'beam systems' from beam_system;
+end	
+##
+--
+--
+drop procedure if exists migrate_elements;
+create procedure migrate_elements()
+begin
+	declare numOld,numNew int default 0;
+	
+    insert into element(element_id,symbol,name) select id, abbr, name from HourLog.elements;
+	
+	select count(*) into numOld from HourLog.elements;	
+	select count(*) into numNew from element;
+	if numOld = numNew then
+	   select 'Migration of elements : successful';
+	else
+	   select 'Migration of elements : failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end	
+##
+--
+--
+drop procedure if exists migrate_beams;
+create procedure migrate_beams()
+begin
+	declare numOld,numNew int default 0;
+	
+    insert into beam(beam_id,beam_system,element,charge,mass_number,energy) select id,1,element,charge,massNumber,energy from HourLog.beams where belongsTo = 'K500';
+	insert into beam(beam_id,beam_system,element,charge,mass_number,energy) select id,2,element,charge,massNumber,energy from HourLog.beams where belongsTo = 'K1200';
+	
+	select count(*) into numOld from HourLog.beams;	
+	select count(*) into numNew from beam;
+	if numOld = numNew then
+	   select 'Migration of beams : successful';
+	else
+	   select 'Migration of beams : failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end	
+##
+--
+--
+drop procedure if exists migrate_users;
+create procedure migrate_users()
+begin
+	declare numNewEmps,numOldEmps,numOldCemps,numNewCemps,numOldRoles,numNewRoles,numInvStaff INT default 0;
+	
+	/* All employees including old ones */
+    insert into sysuser(user_id,first_name,last_name) select empID, empFirstName,empLastName from Staff.Employees;	
+	/*  current employees */	
+	update sysuser e inner join Staff.Person p on p.id = e.user_id 
+        set e.department = p.department, e.current_employee = TRUE, e.email = p.email, e.login_id = p.uniqName; 
+	/*  operations staff and roles */
+	insert into staff_role(staff_role_id,staff_member,role)  
+	    select id,employeeID,r.op_role_id from HourLog.people p, operations_role r
+		where r.description = p.job;
+	update sysuser e inner join HourLog.people p on p.employeeID = e.user_id 
+        set e.sms_capable = p.smsEnabled, 
+            e.sms_number = p.smsNumber, e.sms_provider = p.smsTelco;
+	/* nick names of staff */
+	update sysuser e inner join HourLog.userInfo u on u.uin_usrID = e.user_id 
+	    set e.nick_name = u.uinAbbr; 
+		
+	select count(*) into numNewEmps  from sysuser;
+	select count(*) into numOldEmps  from Staff.Employees;
+	select count(*) into numOldCemps from Staff.Person;
+	select count(*) into numNewCemps from sysuser where current_employee = TRUE;
+	select count(*) into numOldRoles from HourLog.people where job != 0;
+	select count(*) into numNewRoles from staff_role;
+    select count(*) into numInvStaff from staff_role r 
+        inner join sysuser e on r.staff_member = e.user_id 
+        where e.current_employee = FALSE;
+	
+	select numNewEmps,numOldEmps,numOldCemps,numNewCemps,numOldRoles,numNewRoles,numInvStaff;
+	
+	if numOldEmps = numNewEmps and numOldCemps = numNewCemps and numOldRoles = numNewRoles then
+	   select 'Migration of users: successful';
+	else
+	   select 'Migration of users: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+	if numInvStaff != 0 then
+		select 'Warning: Number of operations staff who are not employees: ', numInvStaff;
+	end if;
+end	
+##
+--
+--
+drop procedure if exists migrate_logs;
+create procedure migrate_logs()
+begin
+	declare noLogsOld, noLogsNew,noLogsBlank,noLogsNoExp INT default 0;
+	truncate log_entry;
+	
+	/* some log entries do not have valid experiment numbers. hence the inner join with experiment table */
+    insert into log_entry(log_id,logbook,author,created_at,notes,experiment,facility_status,vault,source,mode)  
+	  select l.id, 1, l.userID, l.ocrDateTime, IFNULL(n.notes,''),experiment_number,summary,vault,source,mode 
+	  from HourLog.logDetails l LEFT JOIN HourLog.notes n ON l.noteId = n.id INNER JOIN experiment e on l.experiment_number = e.number;
+
+	select count(*) into noLogsOld from HourLog.logDetails;
+	select count(*) into noLogsBlank from HourLog.logDetails where noteID = 0;
+	select count(*) into noLogsNew from log_entry;
+	select count(*) into noLogsNoExp from HourLog.logDetails where experiment_number not in (select number from experiment);
+	
+	select noLogsOLd, noLogsNew, noLogsBlank, noLogsNew + noLogsBlank,noLogsNoExp;
+	if noLogsOld = noLogsNew + noLogsNoExp then
+	   select 'Migration of log entries: successful';
+	else
+	   select 'Migration of log entries: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end	
+##
+--
+--
+drop procedure if exists migrate_log_changes;
+create procedure migrate_log_changes()
+begin
+	declare noLogsOld, noLogsNew, noLogsOrphan, noLogsNoExp INT default 0;
+	
+	/* joining with logDetails is not needed but there are 11 orphan records in logChanges; they do not have corresponding log in logDetails.
+	
+    insert into log_change(log_change_id,orig_log_entry,author,created_at,notes)  select l.id, l.logId, l.userID, l.changedDate, n.notes from HourLog.logChanges l LEFT JOIN HourLog.changedNotes n ON l.noteID = n.id;	
+	*/
+    
+	insert into log_entry(logbook,original_log_entry,author,created_at,notes,experiment,facility_status,vault,source,mode) 
+	     select 1, l.logId, l.userID, l.changedDate, IFNULL(n.notes,''),l.experiment_number,l.summary,l.vault,l.source,l.mode
+		 from  HourLog.logDetails d,  experiment e, HourLog.logChanges l 
+		    LEFT JOIN HourLog.changedNotes n ON l.noteID = n.id where l.logId = d.id and d.experiment_number = e.number and l.experiment_number = e.number;
+
+	select count(*) into noLogsOld from HourLog.logChanges;
+	select count(*) into noLogsOrphan from HourLog.logChanges where logId not in (select id from HourLog.logDetails);
+	select count(*) into noLogsNew from log_entry where original_log_entry is not null;	
+	select count(*) into noLogsNoExp from HourLog.logChanges where experiment_number not in (select number from experiment);
+	
+	select noLogsOld 'Num of Old Log Changes', noLogsNew 'Num of New Log Changes', noLogsOrphan 'Num of Orphan Logs', noLogsNoExp; 
+	
+	if noLogsOld = noLogsNew + noLogsOrphan then
+	   select 'Migration of log changes: successful';
+	else
+	   select 'Migration of log changes: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end
+##
+--
+--
+drop procedure if exists migrate_shifts;
+create procedure migrate_shifts()
+begin
+	declare numOldShifts,numNewShifts,numShiftStaffOld,numShiftStaffNew,numRecsMissingStaff,numInChargeRecs INT default 0;
+	
+    insert into shift(shift_id,facility,start_time,exp_in_charge)  select id, 1, ocrDateTime, expInCharge from HourLog.shifts;
+    update shift n inner join HourLog.peopleShift o on n.shift_id = o.shiftID
+       inner join HourLog.people p on o.peopleID = p.id 	   
+       set n.op_in_charge = p.employeeID
+	   where o.status = 'in charge';
+	   
+	/* ignore in-charge records as they are already taken care of in previous step. 
+       if a role is null, assign as 1 'Operator'. If a status is null, assign as 1 'on shift' */	
+	insert into shift_staff_member(ssm_id, shift,staff_member, role, status)
+         select ps.id, ps.shiftID,p.employeeID,IFNULL(r.op_role_id,1),IFNULL(s.status_id,1) 
+         from HourLog.peopleShift ps 
+            inner join HourLog.people p on ps.peopleID = p.id
+            left join operations_role r on r.name = p.job
+            left join shift_status s on ps.status = s.name
+            where ps.status != 'in charge';
+	        	 
+	select count(*) into numInChargeRecs from HourLog.peopleShift ps              
+	   inner join HourLog.people p on ps.peopleID = p.id	               
+	   left join shift_status s on ps.status = s.name             
+	   where ps.status = 'in charge';
+	
+	select count(*) into numOldShifts from HourLog.shifts;
+	select count(*) into numNewShifts from shift;
+	select count(*) into numShiftStaffOld from HourLog.peopleShift;
+	select count(*) into numShiftStaffNew from shift_staff_member;
+	select count(*) into numRecsMissingStaff from HourLog.peopleShift where peopleID not in (select id from HourLog.people);
+	
+	select numOldShifts, numNewShifts,numShiftStaffOld,numShiftStaffNew,numRecsMissingStaff,numInChargeRecs;
+	if numOldShifts = numNewShifts and numShiftStaffOld = numShiftStaffNew + numRecsMissingStaff + numInChargeRecs then
+	   select 'Migration of shifts: successful';
+	else
+	   select 'Migration of shifts: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+	if numRecsMissingStaff != 0 then
+		select 'Warning: Number of operations staff who are missing: ', numRecsMissingStaff;
+	end if;
+end	
+##
+--
+-- Migrate facility status data
+/*
+drop procedure if exists migrate_fac_status_old;
+create procedure migrate_fac_status_old()
+begin
+	declare noFstatOldValid,noFstatOldAll,noFstatNew INT default 0;
+	
+    insert into facility_status_event(occurred_at,facility,status,experiment,log_entry)  
+	  select ocrDateTime, 1, summary, experiment_number, id
+	  from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+
+	select count(*) into noFstatOldValid from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+	select count(*) into noFstatOldAll from HourLog.logDetails;
+	select count(*) into noFstatNew from facility_status_event;
+	
+	select noFstatOldValid, noFstatOldAll,noFstatNew;
+	if noFstatOldValid = noFstatNew then
+	   select 'Migration of fac status: successful';
+	else
+	   select 'Migration of fac status: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end
+*/
+--
+-- Migrate facility status data
+drop procedure if exists migrate_fac_status;
+create procedure migrate_fac_status()
+begin
+	declare numStatEvents,counter INT default 0;	
+    declare c_logid,c_expnum,c_stat INT default 0;
+	declare p_stat, p_expnum INT default 0;	
+    declare c_ocrdate DATETIME;	
+	declare no_more_rows BOOLEAN default FALSE;
+	
+	declare cur1 cursor for select id, ocrDateTime, experiment_number, summary 
+	   from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;
+	
+	
+	truncate facility_status;
+    insert into facility_status(status_id,name,description)  
+	  select id,abbr,description from HourLog.summaries;
+	  
+	set @insert = 'insert into facility_status_event(status,occurred_at,facility,log_entry,experiment) values ';
+	set @val = '';
+    open cur1;
+    the_loop: loop
+        fetch cur1 into c_logid, c_ocrdate, c_expnum, c_stat; 
+		if no_more_rows then
+		   leave the_loop;
+		end if;
+				
+		-- if p_stat != c_stat or p_expnum != c_expnum then
+		   set counter = counter + 1;
+		   set @val = concat(@val, ' (',c_stat,',"',c_ocrdate,'",1,',c_logid,',',c_expnum,'),');   
+		-- end if;
+		set p_stat = c_stat;
+		set p_expnum = c_expnum;
+    end loop;
+	close cur1;	
+	--     ----------------------   loop end ------------------
+	if counter > 0 then
+		set @query = concat(@insert,trim(trailing ',' from @val), ';');
+        -- select @query '';		
+        prepare insert_recs from @query;
+        execute insert_recs;  	    
+	end if;
+    
+	select count(*) into numStatEvents from facility_status_event;
+	select counter, numStatEvents;
+	if numStatEvents = counter then
+	   select 'Migration of facility status: successful';
+	else
+	   select 'Migration of facility status: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end	
+##
+--
+-- Migrate facility status data
+drop procedure if exists show_experiments;
+create procedure show_experiments()
+begin
+    declare c_logid,c_expnum,c_stat, noteid, counter INT default 0;
+	declare p_stat,p_expnum INT default 0;	
+    declare c_ocrdate DATETIME;	
+	declare no_more_rows BOOLEAN default FALSE;
+	
+	declare cur1 cursor for
+	   select id, ocrDateTime, experiment_number, summary, noteID 
+	   from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number order by ocrDateTime asc;
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;
+			
+	set @val = '';		
+    open cur1;
+    the_loop: loop
+        fetch cur1 into c_logid, c_ocrdate, c_expnum, c_stat, noteId; 
+		if no_more_rows then
+		   leave the_loop;
+		end if;
+				
+		if p_expnum != c_expnum then
+		   set counter = counter + 1;
+		   set @val = concat(@val, c_expnum,'\t', c_ocrdate,'\t', c_stat,'\t', c_logid,'\t',noteid, '\n');   
+		end if;
+		set p_expnum = c_expnum;
+    end loop;
+    close cur1;	
+	if counter > 0 then
+		    select @val '';	    
+	end if;
+	select counter;	
+end	
+##
+--
+--
+drop procedure if exists migrate_artifacts;
+create procedure migrate_artifacts()
+begin
+    declare doc_id int;
+	declare numImg, numTR, numArtf INT default 0;
+	
+	/*
+    declare cur1 cursor for select docId from HourLog.docs where type = 'IMG';
+    open cur1;
+    read_loop: loop
+        fetch cur1 into doc_id;
+        set @query = concat('select image from imageContrib.images where id =', 
+            doc_id, ' into outfile "/var/hl/', doc_id,'.jpg"');
+        prepare write_file from @query;
+        execute write_file;
+    end loop;
+    close cur1;
+	*/
+	
+	insert into artifact(type,name,log_entry,resource_id,description) 
+        select 'd',if(i.caption is null or i.caption = '','attachment',i.caption),d.logId,d.docId,i.caption 
+        from HourLog.docs d inner join imageContrib.images i on d.docId = i.id
+        where d.type = 'IMG';
+	insert into artifact(type,name,log_entry,resource_id) 
+        select 't',d.docId,d.logId,d.docId from HourLog.docs d 
+        where d.type = 'TR';
+		
+	select count(*) into numImg from HourLog.docs where type = 'IMG';	
+	select count(*) into numTR  from HourLog.docs where type = 'TR';
+	select count(*) into numArtf from artifact;
+	
+	select numImg, numTR, numArtf;
+end 
+##
+--
+-- Migrate breakdown status
+drop procedure if exists migrate_brk_status;
+create procedure migrate_brk_status()
+begin
+	declare numBrkEvents, counter INT default 0;
+	
+	-- clean 
+	truncate breakdown_event;
+	
+    -- migrate breakdown categories	
+	truncate breakdown_category;	
+	insert into breakdown_category(brkcat_id,name,description) 
+	   select id,abbr,description from HourLog.breakdownCategories;
+	   
+insert into  breakdown_event(status,category,log_entry) 
+	select rfStatus,1,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+	select vacStatus,2,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+	select daqStatus,3,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+    select psStatus,4,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+    select ctlStatus,5,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+    select utlStatus,6,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+   select cryStatus,7,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+   select safStatus,8,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+   select othStatus,9,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+   select detStatus,10,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+   select magStatus,11,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+   select ecrStatus,12,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+   select motStatus,13,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+insert into  breakdown_event(status,category,log_entry) 
+   select dflStatus,14,id from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number;
+	
+	select count(*) into numBrkEvents from breakdown_event;
+	select counter, numBrkEvents;
+	if numBrkEvents = counter then
+	   select 'Migration of breakdown events: successful';
+	else
+	   select 'Migration of breakdown events: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end	
+##
+--
+-- 
+drop procedure if exists check_current_data;
+create procedure check_current_data()
+begin
+    -- log entries with invalid experiment numbers
+    select distinct experiment_number 'Invalid Experiment Nos' from HourLog.logDetails where experiment_number not in (select exp_number from ApprovedExperiments.Experiments);
+	select id,ocrDateTime,experiment_number from HourLog.logDetails where experiment_number not in (select exp_number from ApprovedExperiments.Experiments);
+	-- Log changes with dangling Log ID
+	select distinct id 'log change ID',logId 'Missing Log ID', changedDate from HourLog.logChanges where logId not in (select id from HourLog.logDetails);
+	-- Log entries with no notes
+	select count(*) 'Num of log entries with no notes' from HourLog.logDetails where noteID not in (select id from HourLog.notes);
+	select count(*) 'Num of log changes with no notes' from HourLog.logChanges where noteID not in (select id from HourLog.notes);
+	-- invalid users
+	select count(*) 'Num of log entries with invalid users' from HourLog.logDetails where userID not in (select empID from Staff.Employees);
+end
+##
+--
+-- Migrate facility status data
+drop procedure if exists check_changes;
+create procedure check_changes()
+begin
+    declare c_logid,c_expnum,c_stat, noteid, counter INT default 0;
+	declare p_stat,p_expnum INT default 0;	
+    declare c_ocrdate DATETIME;	
+	declare no_more_rows BOOLEAN default FALSE;
+	
+	declare cur1 cursor for
+	   select id, ocrDateTime, id 
+	   from HourLog.logDetails l INNER JOIN experiment e ON l.experiment_number = e.number order by ocrDateTime asc;
+	
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;
+	   
+    open cur1;
+    the_loop: loop
+        fetch cur1 into c_logid, c_ocrdate, c_expnum; 
+		if no_more_rows then
+		   leave the_loop;
+		end if;
+				
+		if p_expnum != c_expnum then
+		   set counter = counter + 1;		      
+		end if;
+		set p_expnum = c_expnum;
+    end loop;
+    close cur1;	
+	
+	select counter;	
+end	
+##
+--
+-- 
+drop procedure if exists check_changes2;
+create procedure check_changes2()
+begin
+    declare c_logid,c_expnum,c_stat, noteid, counter INT default 0;
+	declare p_stat,p_expnum INT default 0;	
+    declare c_ocrdate DATETIME;	
+	declare no_more_rows BOOLEAN default FALSE;
+			
+	declare cur1ch cursor for
+	   select id, ocrDateTime, k500Beam 
+	   from HourLog.logChanges l INNER JOIN experiment e ON l.experiment_number = e.number order by ocrDateTime asc;
+	   
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;
+	   	
+	open cur1ch;
+    the_loop: loop
+        fetch cur1ch into c_logid, c_ocrdate, c_expnum; 
+		if no_more_rows then
+		   leave the_loop;
+		end if;
+				
+		if p_expnum != c_expnum then
+		   set counter = counter + 1;		      
+		end if;
+		set p_expnum = c_expnum;
+    end loop;
+    close cur1ch;
+		   
+	select counter;	
+end	
+##
+--
+-- 
+drop procedure if exists migrate_data;
+create procedure migrate_data()
+begin
+   /* 
+     To do: 
+	   - migrate beam status from logDetails
+	   - migrate breakdown and beam status from logChanges
+	   - migrate artifacts
+   */
+    set @MIG_SUCCESS = TRUE;
+	
+	call clean_all();
+	call create_base();
+	call migrate_elements();
+	call migrate_beams();
+	call migrate_users();
+	call migrate_shifts();
+	call migrate_logs();
+	call migrate_log_changes();
+	call migrate_artifacts();
+	-- call migrate_fac_status();
+	call migrate_brk_status();
+	
+	if @MIG_SUCCESS = TRUE then
+		select 'Migration successful';
+	else
+	   select 'Migration failed';
+	end if;	
+end
+##
+
+delimiter ;

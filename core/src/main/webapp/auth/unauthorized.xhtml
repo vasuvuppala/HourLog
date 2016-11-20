@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+        <h:outputText value="You are not authorized to perform this operation. You have two options:" />
+        <ul>
+            <li>
+                <h:outputText value="Discuss your privileges with #{msgs.title} Administrator (generally the Operations Department Head)" />
+            </li>
+            <li>
+                <h:outputText value="Report it as a problem through the Help menu." />
+            </li>
+        </ul>      
+    </ui:define>       
+</ui:composition>

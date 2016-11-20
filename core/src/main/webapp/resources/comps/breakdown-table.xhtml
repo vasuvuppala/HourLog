@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:cc="http://java.sun.com/jsf/composite"
+      xmlns:ui="http://java.sun.com/jsf/facelets">
+
+    <!-- INTERFACE -->
+    <cc:interface>
+        <cc:attribute name="reportItem" required="true" />
+        <cc:attribute name="export" required="false" default="false" />
+    </cc:interface>
+
+    <cc:implementation>        
+        <p:dataTable  value="#{cc.attrs.reportItem.breakdownList}" 
+                     var="ri"  rowKey="#{ri.name}">
+            <f:facet name="header">
+                <h:outputText value="Breakdown Hours (Total Hours: " />
+                <h:outputText value="#{cc.attrs.reportItem.breakdownTotal}" >
+                    <f:convertNumber  minFractionDigits="2" maxFractionDigits="2"/>
+                </h:outputText>
+                <h:outputText value=")" />
+            </f:facet>
+            <p:column headerText="Name" sortBy="#{ri.name}">
+                <h:outputText value="#{ri.name}" />
+            </p:column>
+            <p:column headerText="Description">
+                <h:outputText value="#{ri.description}" />
+            </p:column>
+            <p:column headerText="Number" styleClass="alignRight" sortBy="#{ri.occurrences}">
+                <h:outputText value="#{ri.occurrences}" />
+            </p:column>
+            <p:column headerText="Hours" styleClass="alignRight" sortBy="#{ri.hours}">
+                <h:outputText value="#{ri.hours}" >
+                    <f:convertNumber pattern="#,###,##0.00"/>
+                </h:outputText>
+            </p:column>
+            <p:column headerText="Percent" styleClass="alignRight" sortBy="#{ri.percentage}">
+                <h:outputText value="#{ri.percentage}" >
+                    <f:convertNumber  minFractionDigits="2" maxFractionDigits="2"/>
+                </h:outputText>
+            </p:column>
+            <p:column headerText="Average" styleClass="alignRight" >
+                <h:outputText value="#{ri.occurrences == 0 ? ' ' : ri.hours / ri.occurrences}" >
+                    <f:convertNumber pattern="#,###,##0.00"/>
+                </h:outputText>
+            </p:column>
+        </p:dataTable>
+        <ui:remove>
+            <!-- ToDo: giving a dynamic ID to the datatable causes sorting to stop working. So disabling exports. -->
+            <ui:fragment rendered="#{cc.attrs.export}">                   
+                <h:commandLink title="Export to Excel">  
+                    <p:graphicImage value="#{resource['images/excel.png']}" />                      
+                    <p:dataExporter type="xls"  target="#{cc.clientId}-brkdownTable" fileName="HL2-summary-report" />  
+                </h:commandLink>  
+                <h:commandLink title="Export to CSV">  
+                    <p:graphicImage value="#{resource['images/csv.png']}" />  
+                    <p:dataExporter type="csv" target="#{cc.clientId}-brkdownTable" fileName="HL2-summary-report"  /> 
+                </h:commandLink>  
+                <h:commandLink title="Export to XML">  
+                    <p:graphicImage value="#{resource['images/xml.png']}" />  
+                    <p:dataExporter type="xml" target="#{cc.clientId}-brkdownTable" fileName="HL2-summary-report" />  
+                </h:commandLink>                    
+            </ui:fragment>
+        </ui:remove>
+    </cc:implementation>
+</html>

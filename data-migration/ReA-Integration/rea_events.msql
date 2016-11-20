@@ -1,0 +1,69 @@
+--
+-- Create base status events for ReA: experiment, summary, breakdowns etc
+--
+drop procedure if exists m2o_rea_base_events;
+create procedure m2o_rea_base_events()
+begin
+  -- add initial status entries for ReA
+  
+   DECLARE reafid INT; -- ReA facilty Id
+   DECLARE author INT; -- user for initial event
+   DECLARE epoch DATETIME DEFAULT '2003-01-01';
+   DECLARE eventid INT;
+   DECLARE firstExpr INT DEFAULT 300;
+   DECLARE firstSummary INT; 
+   DECLARE firstMode INT;
+   -- DECLARE firstSource INT;
+   -- DECLARE firstVault INT;
+   
+   select facility_id into reafid from facility where facility_name = 'ReA';
+   select user_id into author from sysuser where last_name = 'stolz';
+   select summary_id into firstSummary from summary where name = 'SOF';
+   select mode_id into firstMode from mode where name = 'IND';
+   -- select source_id into firstSource from source where name = 'ISRC1';
+   -- select vault_id into firstVault from vault where name = 'ATTPC';
+   
+   -- remove all ReA sub events
+    delete from expr_event where event in 
+     (select event_id from event where facility = reafid);
+    delete from breakdown_event where event in 
+     (select event_id from event where facility = reafid);
+    delete from summary_event where event in 
+     (select event_id from event where facility = reafid);
+    delete from source_event where event in 
+     (select event_id from event where facility = reafid);
+    delete from mode_event where event in 
+     (select event_id from event where facility = reafid);
+    delete from vault_event where event in 
+     (select event_id from event where facility = reafid);
+    delete from beam_event where event in 
+     (select event_id from event where facility = reafid);  
+      
+    -- remove all ReA events  
+    delete from event where facility  = reafid; 
+    
+    -- the first event
+     
+    insert into event(facility,occurred_at,event_entered_at,reported_by, log_entered_at) 
+       values(reafid, epoch, epoch, author, epoch);
+    select LAST_INSERT_ID() into eventid;
+    
+    insert into expr_event(experiment,event) values(firstExpr, eventid);
+    insert into summary_event(summary, event) values(firstSummary, eventid);
+    insert into breakdown_event(category, failed, event)
+         select brkcat_id, 0, eventid from breakdown_category;
+    insert into mode_event(mode, event) values(firstMode, eventid);
+    -- insert into source_event(source, event) values(firstSource, eventid);
+    -- insert into vault_event(vault, event) values(firstVault, eventid);
+    
+	select 'Created ', count(*), 'experiment events' from expr_event 
+      where event in (select event_id from event where facility = reafid);
+    select 'Created ', count(*), 'summary events' from summary_event 
+      where event in (select event_id from event where facility = reafid);
+    select 'Created ', count(*), 'breakdown events' from breakdown_event 
+      where event in (select event_id from event where facility = reafid);
+    select 'Created ', count(*), 'Mode events' from mode_event 
+      where event in (select event_id from event where facility = reafid);  
+
+end	
+##

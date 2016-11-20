@@ -1,0 +1,2 @@
+#!/bin/bash
+curl -v -k -L -H "Accept: application/json" -X GET http://enterprise-qa.nscl.msu.edu/troubleReports/api/getTrainings/1507 | python -m json.tool 

@@ -1,0 +1,2 @@
+#!/bin/bash
+curl -v -k -L -H "Accept: application/json" -H "DISCS-Authorization: xxxx:zzz" -X GET http://vuppala-win7.intranet.nscl.msu.edu:8080/hourlog/api/rest/v0.1.0/reports/summary | python -m json.tool 

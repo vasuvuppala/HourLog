@@ -1,0 +1,138 @@
+--
+-- migrate events i.e. changes in facility status, breakdowns experiments, sources etc
+--
+drop procedure if exists migrate_facility_status;
+create procedure migrate_facility_status(IN base_num INTEGER)
+begin
+    declare numLogDetails, numLogChanges, numEventsNew INT default 0;
+	-- truncate source_event;
+	-- truncate facility_status_event;
+	-- truncate vault_event;
+	-- truncate expr_event;
+	-- truncate mode_event;
+	-- truncate beam_event;
+	-- truncate breakdown_event;
+	
+	call migrate_main_events(base_num);
+	call migrate_sub_events(base_num);
+	
+	select 'Events without log entry = ', count(*) from event where note is null;	
+	select 'Migrated', count(*), 'facility status events' from facility_status_event;
+	select 'Migrated', count(*), 'source events'  from source_event;
+	select 'Migrated', count(*), 'vault events' from vault_event;
+	select 'Migrated', count(*), 'experiment events' from expr_event;
+	select 'Migrated', count(*), 'mode events'  from mode_event;
+	select 'Migrated', count(*), 'beam events'  from beam_event;
+	select 'Migrated', count(*), 'breakdown events'  from breakdown_event;
+	
+    select count(*) into numLogDetails from HourLog.logDetails;
+    select count(*) into numLogChanges from HourLog.logChanges;
+	select count(*) into numEventsNew from event;
+	
+	select numEventsNew, numLogDetails, numLogChanges;
+	if numLogDetails + numLogChanges = numEventsNew then
+	   select 'Migration of status events: successful';
+	else
+	   select 'Migration of status events: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+    
+end	
+##
+--
+-- Migrate main events: log entries and changes
+--
+drop procedure if exists migrate_main_events;
+create procedure migrate_main_events(IN base_num INTEGER)
+begin	
+	-- current events 	
+    insert into event(event_id,facility,reported_by,occurred_at,reported_at,note)  
+	  select l.id, 1, l.userID, l.ocrDateTime, l.reported_at, l.noteID
+	  from temp_log l;
+
+    --	insert obsoleted events    
+    insert into event(event_id,facility,obsoleted_by,reported_by,occurred_at,reported_at,note)
+       select base_num + t1.id, 1, t1.logId, t1.userID, t1.ocrDateTime,t1.reported_at, t1.parentNoteID                      
+       from temp_chg t1; 
+end	  
+##
+--
+-- Migrate sub-events (status, experiment, breakdown etc)
+--
+drop procedure if exists migrate_sub_events;
+create procedure migrate_sub_events(IN base_num INTEGER)
+begin	
+	declare no_more_rows BOOLEAN default FALSE;
+	declare c_num INT;
+	declare c_name VARCHAR(32);
+	declare cur1 cursor for select num, name from temp_brk;
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;		
+	
+    select 'Migrating sub-events ..';
+    -- combine log entries and their changes
+    drop table if exists temp_event ;
+	create table temp_event
+       select base_num + id as id, changedDate, logId, ocrDateTime, beamQuality, rtStatus, scStatus, inj5Status, inj12Status, k5Status, nLineStatus, k12Status, a19Status, expStatus, rtActivity, scActivity, inj5Activity, inj12Activity, k5Activity, nLineActivity, k12Activity, a19Activity, expActivity, rfStatus, vacStatus, daqStatus, psStatus, ctlStatus, utlStatus, cryStatus, safStatus, othStatus, mode, source, vault, noteID, summary, experimentID, userID, k500Beam, k1200Beam, a1900Energy, a1900MassNumber, a1900Element, a1900Charge, detStatus, magStatus, experiment_number, ecrStatus, dflStatus, motStatus from temp_chg
+    UNION ALL
+       select id, reported_at, id, ocrDateTime, beamQuality, rtStatus, scStatus, inj5Status, inj12Status, k5Status, nLineStatus, k12Status, a19Status, expStatus, rtActivity, scActivity, inj5Activity, inj12Activity, k5Activity, nLineActivity, k12Activity, a19Activity, expActivity, rfStatus, vacStatus, daqStatus, psStatus, ctlStatus, utlStatus, cryStatus, safStatus, othStatus, mode, source, vault, noteID, summary, experimentID, userID, k500Beam, k1200Beam, a1900Energy, a1900MassNumber, a1900Element, a1900Charge, detStatus, magStatus, experiment_number, ecrStatus, dflStatus, motStatus from temp_log;
+	
+	-- facility status events
+    select 'Migrating Facility status ..';
+    insert into facility_status_event(facility_status,event)  
+	  select b.summary,b.id from temp_event b;
+
+	-- source events
+    select 'Migrating Source events ..';
+	insert into source_event(source,event)  
+	  select b.source, b.id from temp_event b;
+	
+	-- vault events  
+    select 'Migrating Vault Events ..';
+	insert into vault_event(vault,event)  
+	  select b.vault, b.id from temp_event b;
+
+	-- mode events
+    select 'Migrating Mode Events ..';
+	insert into mode_event(mode,event)  
+	  select b.mode, b.id from temp_event b;
+
+	-- experiment events
+    select 'Migrating Experiment Events ..';
+	insert into expr_event(experiment,event)  
+	  select b.experiment_number, b.id from temp_event b;
+	
+    -- beam events
+    select 'Migrating Beam Events ..';
+	insert into beam_event(beam_system,beam,event) 
+	   select 1, IF(b.k500Beam = 0, NULL, b.k500Beam), b.id from temp_event b;
+	
+    insert into beam_event(beam_system,beam,event) 
+	   select 2, IF(b.k1200Beam = 0, NULL, b.k1200Beam), b.id from temp_event b ;
+	
+	-- needs only comparison with element and massnumber. rest may be taken out
+	insert into beam_event(beam_system,element,charge,energy,mass_number,event) 
+	   select 3,IF(b.a1900Element = 0,NULL,b.a1900Element), b.a1900Charge, b.a1900Energy, b.a1900MassNumber, b.id 
+	   from temp_event b;	   
+	
+	-- breakdown events	
+    select 'Migrating Breakdown Events ..';
+	open cur1;
+	brk_loop: loop
+	    fetch cur1 into c_num, c_name;
+		if (no_more_rows) then
+		    leave brk_loop;
+		end if;
+		set @stmt := concat('insert into breakdown_event(category,status,event) select ', c_num, ', b.', c_name, ', b.id from temp_event b');
+		-- select @stmt as 'Query';
+		prepare insert_brkevents from @stmt;
+        execute insert_brkevents;
+	end loop;
+	close cur1;
+    
+    drop table temp_event;
+end
+##
+
+
+
+

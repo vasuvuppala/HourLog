@@ -1,0 +1,9 @@
+
+Netbeans' 'Generate entities from database' utility ignores the cascade options for foreign keys in the database 
+and instead uses Cascade.ALL. This is extremely dangerous as it can wipe out most of the database! 
+
+Every time entities are generated, make sure the following steps are done:
+
+1. Replace CascadeType.ALL with {CascadeType.PERSIST, CascadeType.MERGE} in all entities.
+2. Add @Version to entities for which optimistic concurrency control is required (to 'version' field)
+

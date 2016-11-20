@@ -1,0 +1,46 @@
+--
+--
+drop procedure if exists migrate_shifts;
+create procedure migrate_shifts()
+begin
+	declare numOldShifts,numNewShifts,numShiftStaffOld,numShiftStaffNew,numRecsMissingStaff,numInChargeRecs INT default 0;
+	
+    insert into shift(shift_id,facility,start_time,exp_in_charge)  select id, 1, ocrDateTime, expInCharge from HourLog.shifts;
+    update shift n inner join HourLog.peopleShift o on n.shift_id = o.shiftID
+       inner join HourLog.people p on o.peopleID = p.id 	   
+       set n.op_in_charge = p.employeeID
+	   where o.status = 'in charge';
+	   
+	/* ignore in-charge records as they are already taken care of in previous step. 
+       if a role is null, assign as 1 'Operator'. If a status is null, assign as 1 'on shift' */	
+	insert into shift_staff_member(ssm_id, shift,staff_member, role, status)
+         select ps.id, ps.shiftID,p.employeeID,IFNULL(r.op_role_id,1),IFNULL(s.status_id,1) 
+         from HourLog.peopleShift ps 
+            inner join HourLog.people p on ps.peopleID = p.id
+            left join operations_role r on r.name = p.job
+            left join shift_status s on ps.status = s.name
+            where ps.status != 'in charge';
+	        	 
+	select count(*) into numInChargeRecs from HourLog.peopleShift ps              
+	   inner join HourLog.people p on ps.peopleID = p.id	               
+	   left join shift_status s on ps.status = s.name             
+	   where ps.status = 'in charge';
+	
+	select count(*) into numOldShifts from HourLog.shifts;
+	select count(*) into numNewShifts from shift;
+	select count(*) into numShiftStaffOld from HourLog.peopleShift;
+	select count(*) into numShiftStaffNew from shift_staff_member;
+	select count(*) into numRecsMissingStaff from HourLog.peopleShift where peopleID not in (select id from HourLog.people);
+	
+	select numOldShifts, numNewShifts,numShiftStaffOld,numShiftStaffNew,numRecsMissingStaff,numInChargeRecs;
+	if numOldShifts = numNewShifts and numShiftStaffOld = numShiftStaffNew + numRecsMissingStaff + numInChargeRecs then
+	   select 'Migration of shifts: successful';
+	else
+	   select 'Migration of shifts: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+	if numRecsMissingStaff != 0 then
+		select 'Warning: Number of operations staff who are missing: ', numRecsMissingStaff;
+	end if;
+end	
+##

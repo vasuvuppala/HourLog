@@ -1,0 +1,34 @@
+
+Migrate Hour Log database from schema v 1.2 to v1.3
+
+0. Note down number of event and shift records:
+     select count(*) from event;
+     select count(*) from shift;
+     
+1. Take a backup of the database
+   mysqldump -h controlsdb.frib.msu.edu -u fdbdba -p --ssl hour_log > hour_log_BACKUP.sql
+   
+2. Dump the database
+  mysqldump --complete-insert --no-create-info -h controlsdb.frib.msu.edu -u fdbdba -p --ssl hour_log > hour_log_prod.sql
+
+3. Modify fields in the dump
+  sed 's/started_at/updated_at/g; s/started_by/updated_by/g' hour_log_prod.sql > hour_log_prod_m.sql
+  
+4. Drop all tables and make sure they are gone
+   source drop_tables.sql
+   show tables;
+   
+5. Create objects and make sure they are there. 
+   source  hourlog-schema-v1.3.sql;
+   show tables;
+   
+6. Import data. Ignore errors for artifact, log_entry, log_cache, breakdown_status, snapshot, snapshot_event
+   source hour_log_prod_m.sql;
+   
+7. Make sure there were no errors during the import.
+
+8. Verify that data was imported:
+     select count(*) from event;
+     select count(*) from shift;
+  
+9. Copy all the dumps in /projects/hourlog/  

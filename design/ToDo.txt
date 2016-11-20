@@ -1,0 +1,3 @@
+
+check artifact.type: should not be null
+     use enum instead of char (jpa)

@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageModeForm" >
+           
+            <p:dataTable id="manageModeTable" value="#{manageModeView.modes}" var="obj" 
+                         scrollRows="25" scrollable="true" scrollHeight="400" liveScroll="true"
+                         rowKey="#{obj.modeId}" selectionMode="single" selection="#{manageModeView.selectedMode}"                          
+                         filteredValue="#{manageModeView.filteredModes}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Modes"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageModeView.onRowSelect}" update="commandButtons" />               
+                <p:column headerText="Name" sortBy="#{obj.name}" 
+                          filterBy="#{obj.name}" filterMatchMode="contains" >
+                    <h:outputText value="#{obj.name}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Description" sortBy="#{obj.description}" >
+                    <h:outputText value="#{obj.description}" />
+                </p:column>  
+                <p:column headerText="Active" sortBy="#{obj.active}" >                   
+                    <h:outputText value="#{obj.active ? 'Yes': 'No'}"/>
+                </p:column>
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="Add" icon="ui-icon-document" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageModeView.onAddCommand}" oncomplete="PF('objInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":objInputDlg"  process="@this"                                          
+                                             actionListener="#{manageModeView.onEditCommand}"
+                                             oncomplete="PF('objInputWid').show()" disabled="#{empty manageModeView.selectedMode}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageModeView.onDeleteCommand}" oncomplete="PF('objInputWid').show()" 
+                                             disabled="#{empty manageModeView.selectedMode}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="objInputDlg" widgetVar="objInputWid">
+            <h:form id="authROleInputForm">              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="New Mode" rendered="#{manageModeView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Mode" rendered="#{manageModeView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Mode" rendered="#{manageModeView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+                    
+                    <p:row>
+                        <p:column style="text-align: center">
+                            <p:outputLabel for="name" value="Name"/>
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="name" value="#{manageModeView.inputAction == 'CREATE'? manageModeView.inputMode.name: manageModeView.selectedMode.name}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageModeView.inputAction == 'DELETE'}"/>                      
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="desc"  value="Description" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="desc" value="#{manageModeView.inputAction == 'CREATE'? manageModeView.inputMode.description : manageModeView.selectedMode.description}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageModeView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="act"  value="Active" />
+                        </p:column>
+                        <p:column>
+                            <p:selectBooleanCheckbox id="act" value="#{manageModeView.inputAction == 'CREATE'? manageModeView.inputMode.active : manageModeView.selectedMode.active}" 
+                                         required="true" 
+                                         validatorMessage="Must specify if it is active or not" disabled="#{manageModeView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('objInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageModeView.saveMode()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form"  update="@form :manageModeForm:manageModeTable" rendered="#{manageModeView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageModeView.deleteMode()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form" update=":manageModeForm:manageModeTable" rendered="#{manageModeView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

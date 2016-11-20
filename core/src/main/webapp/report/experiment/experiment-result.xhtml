@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"             
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:fc="http://java.sun.com/jsf/composite/comps"
+                xmlns:h="http://java.sun.com/jsf/html" >
+
+    <h:form id="ExperimentRepResults">
+        <h:outputText value="#{msgs.title}: Experiment Report" styleClass="heading"/>
+        
+        <h:outputText value="No data was found for this report" rendered="#{empty experimentReportView.experimentReport}"/>
+        
+        <p:panel id="exprResult" toggleable="true" closable="true"  rendered="#{not empty experimentReportView.experimentReport}">
+            <f:facet name="header">
+                <h:outputText value="Hour Log Report For #{experimentReportView.selectedExperiment.number}-#{experimentReportView.selectedExperiment.spokesperson} From "/>
+                <h:outputText value="#{experimentReportView.reportStartDate}" >
+                    <f:convertDateTime timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+                <h:outputText value=" To " />
+                <h:outputText value="#{experimentReportView.reportEndDate}" >
+                    <f:convertDateTime timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+            </f:facet>
+            <f:facet name="footer"> 
+                <h:outputText value="Generated on " />
+                <h:outputText value="#{experimentReportView.reportDate}"> 
+                    <f:convertDateTime timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+                <p:commandButton value="Print" type="button" icon="ui-icon-print"  style="float: right;" >
+                    <p:printer target="exprResult" />
+                </p:commandButton>
+            </f:facet>
+            <fc:experiment-report reportItem="#{experimentReportView.experimentReport}"  
+                                  barModel="#{experimentReportView.barModel}" pieModel="#{experimentReportView.pieModel}"
+                                  export="true"/>            
+        </p:panel>      
+    </h:form>
+</ui:composition>

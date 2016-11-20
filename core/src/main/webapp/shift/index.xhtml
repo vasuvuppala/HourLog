@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content">
+        <h:outputText value="Sorry, you are not authorized to update shifts. Please contact #{msgs.title} administrator." 
+                      rendered="#{not shiftManager.canChangeShift()}" />
+        <h:form id="shiftForm" rendered="#{shiftManager.canChangeShift()}"> 
+            <p:panel id="inputPanel"  > 
+                <f:facet name="header">
+                    <h:outputText value="Last Updated At: "/>
+                    <h:outputText value="#{shiftManager.currentShift.updatedAt}"/>
+
+                    <p:commandButton value="Save" process="@form" update=":dashboardForm:dashboard" icon="ui-icon-disk"
+                                     oncomplete="if (!args.validationFailed &amp;&amp; args.success) setTimeout(window.close(),30000)"                                                                
+                                     action="#{shiftManager.newShift()}" style="float: right;" 
+                                     disabled="#{!shiftManager.canChangeShift()}" />
+                    <p:commandButton value="Cancel" type="button" icon="ui-icon-close" style="float: right;"
+                                     onclick="setTimeout(window.close(), 30000)" />
+                    <p:spacer width="5"  rendered="false"/>
+                    <p:commandButton value="Save Shift Information" process="@form" update="@form :dashboardForm:dashboard" icon="ui-icon-disk"                                                                                       
+                                     action="#{shiftManager.newShift()}" style="float: right;" 
+                                     disabled="#{!shiftManager.canChangeShift()}" rendered="false" />
+                </f:facet>
+
+                <p:dashboard id="shiftPanel"  model="#{shiftDashboardView.model}">
+                    <p:panel id="exprimenterIC" header="Experimenter in Charge" toggleable="true">
+                        <p:outputLabel value="Experimenter in charge: " for="expic"/>
+                        <p:inputText id="expic" value="#{shiftManager.currentShift.expInCharge}" disabled="#{!shiftManager.canChangeShift()}"/>
+                    </p:panel>
+                    <c:forEach items="#{shiftManager.operationsRoles}" var="role" >
+                        <p:panel id="role-#{role.opRoleId}" header="#{role.name}" toggleable="true">
+                            <p:panelGrid id="rolePanel#{role.opRoleId}" styleClass="#{role.name == 'Operator'? 'noBorders': ''}">                      
+                                <p:row>
+                                    <p:column>
+                                        <p:outputLabel value="On Shift" />
+                                    </p:column>
+
+                                    <p:column> 
+                                        <p:outputLabel value="Status" rendered="#{role.name != 'Operator'}"/>
+                                    </p:column>
+                                    <p:column rendered="#{role.name == 'Operator'}">                                   
+                                        <p:outputLabel value="OIC: " title="Operator in Charge"/>                                   
+                                    </p:column>
+                                    <ui:remove>
+                                        <p:column  colspan="2" rendered="#{role.name != 'Operator'}" >   
+                                            <p:outputLabel value="Send SMS Notification " />                                  
+                                        </p:column>
+                                    </ui:remove>
+
+                                    <p:column rendered="#{role.name == 'Operator'}"> 
+                                        <p:selectOneMenu  value="#{shiftManager.currentShift.opInCharge}"  
+                                                          converter="#{userConverter}" var="u"
+                                                          disabled="#{!shiftManager.canChangeShift()}">
+                                            <f:selectItems value="#{shiftManager.trainedInOIC}"  
+                                                           var="s" itemLabel="#{s.lastName}, #{s.firstName}" 
+                                                           itemValue="#{s}"  />
+                                            <p:column>
+                                                #{u.lastName}, #{u.firstName}
+                                            </p:column>
+                                            <p:ajax update="rolePanel#{role.opRoleId}" listener="#{shiftManager.newOIClistener}" />
+                                        </p:selectOneMenu>
+                                    </p:column>
+                                </p:row>
+                                <c:forEach  items="#{shiftManager.shiftStaffAs(role)}" var="ssm">
+                                    <p:row>                                    
+                                        <p:column>
+                                            <p:selectBooleanCheckbox value="#{ssm.selected}"  style="vertical-align: middle;" 
+                                                                     disabled="#{!shiftManager.canChangeShift() || shiftManager.selectedOIC == ssm}"/>                                        
+                                            <p:spacer width="5"/>
+                                            <h:outputText value="#{ssm.member.staffMember.lastName}, #{ssm.member.staffMember.firstName}" />
+                                        </p:column>
+                                        <p:column rendered="#{ssm.member.role.name != 'Operator'}">
+                                            <p:selectOneMenu value="#{ssm.member.status}" 
+                                                             converter="#{shiftStatusConverter}" disabled="#{!shiftManager.canChangeShift()}" >
+                                                <f:selectItems value="#{shiftManager.shiftStatus}"  var="stat" itemLabel="#{stat.name}" itemValue="#{stat}" />
+                                            </p:selectOneMenu>
+                                        </p:column>
+                                        <ui:remove>
+                                            <p:column rendered="#{ssm.member.role.name != 'Operator'}" >
+                                                <p:panelGrid  columns="3" styleClass="noBorders" >                                                   
+                                                    <p:selectBooleanCheckbox value="#{ssm.member.sendSms}" 
+                                                                             disabled="#{!shiftManager.canChangeShift()}"/>                                                                                                 
+                                                    <p:inputText value="#{ssm.member.staffMember.smsAddress}" disabled="#{!shiftManager.canChangeShift()}" />                                                                                                     
+                                                </p:panelGrid>
+                                            </p:column>
+                                        </ui:remove>
+                                    </p:row>
+                                </c:forEach> 
+                            </p:panelGrid>
+                        </p:panel>
+                    </c:forEach>
+                </p:dashboard>
+                <div style="clear:both" />
+            </p:panel>  
+        </h:form>
+    </ui:define>       
+</ui:composition>

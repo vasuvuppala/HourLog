@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"               
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html">
+
+    <h:form id="StatusRepForm"> 
+        <p:panelGrid id="reportPanel" >
+            <f:facet name="header">
+                <p:row>
+                    <p:column colspan="3">
+                        <h:outputText value="Operations Hour Log Report" />   
+                    </p:column>
+                </p:row>
+            </f:facet>
+            <p:row>
+                <p:column><h:outputText value="Facility: "/> </p:column>
+                <p:column> 
+                    <p:selectOneMenu value="#{reportView.selectedFacility}"  
+                                     var="p" 
+                                     converter="#{facilityConverter}" 
+                                     filter="true" filterMatchMode="startsWith">    
+                        <f:selectItems value="#{reportView.facilities}" var="fac" itemLabel="#{fac.facilityName}" itemValue="#{fac}"/>
+                        <p:ajax update="reportPanel"  process="reportPanel" listener="#{reportView.changeFacility()}"/>
+                        <p:column>  
+                            #{p.facilityName}  
+                        </p:column> 
+                        <p:column >  
+                            #{p.description}
+                        </p:column> 
+                        <f:validateBean/>
+                    </p:selectOneMenu>
+                </p:column>
+            </p:row>
+            <p:row rendered="true">
+                <p:column><h:outputLabel for="type" value="Report Type" /></p:column>
+                <p:column>                        
+                    <p:selectOneMenu id="type" value="#{reportView.selectedRepType}"  >                         
+                        <f:selectItems value="#{reportView.reports}" />  
+                        <p:ajax update="reportPanel"  process="reportPanel"/>
+                    </p:selectOneMenu>
+                </p:column>
+            </p:row>
+            <p:row  rendered="#{reportView.weeklyReport}">
+                <p:column><h:outputLabel for="week" value="Week" /></p:column>               
+                <p:column >                        
+                    <p:selectOneMenu id="week" value="#{reportView.selectedWeek}">                            
+                        <f:selectItems value="#{reportView.weeks}" />                                                                        
+                    </p:selectOneMenu>
+                </p:column>
+            </p:row>
+            <p:row  rendered="#{reportView.monthlyReport}">
+                <p:column><h:outputLabel for="month" value="Month" /></p:column>               
+                <p:column>                        
+                    <p:selectOneMenu id="month" value="#{reportView.selectedMonth}">
+                        <f:selectItems value="#{reportView.months}" />                                                                             
+                    </p:selectOneMenu>
+                </p:column>
+            </p:row>
+            <p:row  rendered="#{reportView.quarterlyReport}">
+                <p:column><h:outputLabel for="quarter" value="Quarter" /></p:column>               
+                <p:column>                        
+                    <p:selectOneMenu id="quarter" value="#{reportView.selectedQuarter}">                        
+                        <f:selectItems value="#{reportView.quarters}" />                                                                  
+                    </p:selectOneMenu>
+                </p:column>
+            </p:row>
+            <p:row rendered="#{!reportView.periodReport}">
+                <p:column><h:outputLabel for="year" value="Year" /></p:column>               
+                <p:column>                        
+                    <p:selectOneMenu id="year" value="#{reportView.selectedYear}">
+                        <f:selectItems value="#{reportView.years}" />                                                                           
+                    </p:selectOneMenu>
+                </p:column>
+            </p:row>
+
+            <p:row  rendered="#{reportView.periodReport}">
+                <p:column><h:outputText value="Start Time "/></p:column>
+                <p:column><p:calendar  id="sdate" value="#{reportView.selectedStartDate}" 
+                                       mindate="#{reportView.minDate}"  maxdate="#{reportView.maxDate}"
+                                       yearRange="#{msgs.calYearRange}" showButtonPanel="true" 
+                                       pattern="#{msgs.calDatePattern}"  title="Format: #{msgs.calDatePattern}"
+                                       navigator="true" showWeek="true"  /> </p:column>                   
+            </p:row>
+            <p:row  rendered="#{reportView.periodReport}">
+                <p:column><h:outputText value="End Time "/></p:column>                 
+                <p:column><p:calendar  id="edate" value="#{reportView.selectedEndDate}"                                       
+                                       mindate="#{reportView.minDate}"  maxdate="#{reportView.maxDate}"
+                                       yearRange="#{msgs.calYearRange}" showButtonPanel="true"  
+                                       pattern="#{msgs.calDatePattern}"  title="Format: #{msgs.calDatePattern}"
+                                       navigator="true"  /> </p:column>
+            </p:row>
+            
+        </p:panelGrid>
+        <p:commandButton id="repButton" value="Generate"  action="#{reportView.generateReport('summary')}"
+                         onclick="this.form.target='_blank'" ajax="false"  
+                         process="@form" disabled="#{reportView.canNotGenerateReports()}"/>
+        <p:blockUI block=":reportInputs" trigger="repButton" >          
+            <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+        </p:blockUI>
+    </h:form>
+    
+</ui:composition>

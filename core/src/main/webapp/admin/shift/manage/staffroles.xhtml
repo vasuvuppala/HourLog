@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageStaffRoleForm" >
+           
+            <p:dataTable id="staffRoleTable" value="#{manageStaffRoleView.staffRoles}" var="obj" 
+                         scrollRows="40" scrollable="true" scrollHeight="400" liveScroll="true"
+                         rowKey="#{obj.staffRoleId}" selectionMode="single" selection="#{manageStaffRoleView.selectedRole}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Staff Roles"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageStaffRoleView.onRowSelect}" update="commandButtons" />
+                
+                <p:column headerText="User" sortBy="#{obj.staffMember.lastName}" filterBy="#{obj.staffMember.lastName} #{obj.staffMember.firstName}" filterMatchMode="contains">
+                    <h:outputText value="#{obj.staffMember.lastName}, #{obj.staffMember.firstName}" />
+                </p:column>
+                <p:column headerText="Role" sortBy="#{obj.role.name}" filterBy="#{obj.role.name}"  filterMatchMode="contains">
+                    <h:outputText value="#{obj.role.name}" title="#{obj.role.description}"/>
+                </p:column>
+                
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="New" icon="ui-icon-document" update=":staffRoleInputDlg" process="@this" 
+                                             actionListener="#{manageStaffRoleView.onAddCommand}" oncomplete="PF('staffRoleInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":staffRoleInputDlg"  process="@this"                                          
+                                             actionListener="#{manageStaffRoleView.onEditCommand}"
+                                             oncomplete="PF('staffRoleInputWid').show()" disabled="#{empty manageStaffRoleView.selectedRole}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":staffRoleInputDlg" process="@this" 
+                                             actionListener="#{manageStaffRoleView.onDeleteCommand}" oncomplete="PF('staffRoleInputWid').show()" 
+                                             disabled="#{empty manageStaffRoleView.selectedRole}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="staffRoleInputDlg" widgetVar="staffRoleInputWid">
+            <h:form>              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="Create New Staff Role" rendered="#{manageStaffRoleView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Staff Role" rendered="#{manageStaffRoleView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Staff Role" rendered="#{manageStaffRoleView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="user"  value="User"/>
+                        </p:column>
+                        <p:column>
+                            <p:selectOneMenu id="user" value="#{manageStaffRoleView.inputAction == 'CREATE'? manageStaffRoleView.inputRole.staffMember : manageStaffRoleView.selectedRole.staffMember}" 
+                                             converter="#{userConverter}" disabled="#{manageStaffRoleView.inputAction == 'DELETE'}">
+                                <f:selectItems value="#{manageStaffRoleView.users}" var="u" itemLabel="#{u.lastName}, #{u.firstName}" itemValue="#{u}" />
+                            </p:selectOneMenu>
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="role" value="Role"/>
+                        </p:column>
+                        <p:column>
+                            <p:selectOneMenu id="role" value="#{manageStaffRoleView.inputAction == 'CREATE'? manageStaffRoleView.inputRole.role : manageStaffRoleView.selectedRole.role}"  
+                                             converter="#{operationsRoleConverter}"
+                                             disabled="#{manageStaffRoleView.inputAction == 'DELETE'}">
+                                <f:selectItems value="#{manageStaffRoleView.operationsRoles}" var="r" itemLabel="#{r.name}" itemValue="#{r}" />
+                            </p:selectOneMenu>
+                        </p:column>
+                    </p:row>
+                    
+                   
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('staffRoleInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageStaffRoleView.saveEntity()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('staffRoleInputWid').hide()"
+                                                 process="@form"  update="@form :manageStaffRoleForm:staffRoleTable" rendered="#{manageStaffRoleView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageStaffRoleView.deleteEntity()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('staffRoleInputWid').hide()"
+                                                 process="@form" update=":manageStaffRoleForm:staffRoleTable" rendered="#{manageStaffRoleView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

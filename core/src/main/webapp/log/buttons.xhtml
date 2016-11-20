@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <p:panelGrid id="inputPanelButtons"  styleClass="noBorders" >
+        <p:row>
+            <p:column>
+                <p:tooltip for="statusInputLock" value="Lock/Unlock Editing of Facility Status" />
+                <p:selectBooleanButton  id="statusInputLock" value="#{logView.statusInputLocked}" 
+                                        onLabel="U" offLabel="L" onIcon="ui-icon-unlocked" offIcon="ui-icon-locked" 
+                                        immediate="true" label="Status" style="display:inline-block;" 
+                                        disabled="#{logView.canNotUpdateStatus()}">
+                    <p:ajax update="beamsInputPanel inputPanelBreakdowns inputPanelStat"  listener="#{logView.resetFacilityStatus()}" />
+                </p:selectBooleanButton>
+
+                <p:tooltip for="editorSwitch" value="Switch between plain and rich text editor" />
+                <p:selectBooleanButton id="editorSwitch" value="#{logView.editorSwitchState}"
+                                       onLabel="P" offLabel="R" style="display:inline-block;"
+                                       offIcon="ui-icon-image" onIcon="ui-icon-document"   
+                                       disabled="#{logView.canNotCreateLog()}">  
+                    <p:ajax update="notesEditor" listener="#{logView.onEditorSwitch()}" process="notesEditor editorSwitch" />  
+                </p:selectBooleanButton> 
+                <p:commandButton  id="addTRbutton" tabindex="34"  value="TR.." title="Attach Trouble Report" 
+                                  style="display:inline-block;" immediate="true"
+                                  icon="ui-icon-flag" oncomplete="PF('trDialog').show()" 
+                                  actionListener="#{troubleReportsView.refreshTRs()}"
+                                  disabled="#{logView.canNotCreateLog()}" />
+                <p:blockUI block=":logentform" trigger="addTRbutton" >                   
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" 
+                                    style="background-color: transparent" />                   
+                </p:blockUI>
+                <p:commandButton  tabindex="36" type="button"  title="Start New Shift" 
+                                  style="display:inline-block;" immediate="true"
+                                  icon="ui-icon-transfer-e-w" onclick="PF('shiftStartWid').show()"  rendered="false"/>
+                <p:fileUpload mode="advanced" dragDropSupport="true"  label="Docs" auto="true"
+                              update="attachments" sizeLimit="#{msgs.uploadSize}"  immediate="true"
+                              process="@this" fileUploadListener="#{logView.handleFileUpload}" 
+                              disabled="#{logView.canNotCreateLog()}"/> 
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <p:commandButton tabindex="36" value="Reset" icon="ui-icon-close" 
+                                 process="@this" update="newEntry"  actionListener="#{logView.onInputReset()}"
+                                 disabled="#{logView.canNotCreateLog()}">
+                    <p:resetInput target="newEntry" />
+                </p:commandButton>
+                <p:commandButton id="logSubmitButton" tabindex="23" value="Submit" icon="ui-icon-check" process="@form"
+                                  action="#{logView.addNewEntry()}"
+                                  update=":logform:logTable newEntry"
+                                  disabled="#{logView.canNotCreateLog()}"/>
+                <!--update=":logform:logTable newEntry :dashboardForm:dashboard" -->
+                <p:blockUI block="newEntry" trigger="logSubmitButton" >          
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                </p:blockUI>
+                
+            </p:column>
+        </p:row>
+    </p:panelGrid>
+</ui:composition>

@@ -1,0 +1,62 @@
+--
+-- Migrate attachments and Trouble Report references
+--
+drop procedure if exists migrate_artifacts;
+create procedure migrate_artifacts()
+begin
+    declare doc_id INT;
+	declare numImg, numTR, numArtf INT default 0;		
+	declare no_more_rows BOOLEAN default FALSE;
+    declare cur1 cursor for select distinct docId from HourLog.docs where type = 'IMG';
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;	
+	
+    select 'Migrating artifacts ..';
+    select '  You must remove files from /tmp/h1/blobstore';
+	-- remove files from /tmp/hl/blobstore before this
+	
+    select ' Copying attachments to BlobStore ...';
+    open cur1;
+    read_loop: loop
+        fetch cur1 into doc_id;
+		if (no_more_rows) then
+		    leave read_loop;
+		end if;
+        set @query = concat('select image from imageContrib.images where id =', 
+            doc_id, ' into outfile "/tmp/hl/blobstore/migrated/', doc_id,'.jpg"');
+        prepare write_file from @query;
+        execute write_file;
+    end loop;
+    close cur1;		
+	
+	
+	-- truncate artifact;
+    select 'Migrating attachments ..';
+	insert into artifact(type, name, log_entry, resource_id, description) 
+        select 'd', if(i.caption is null or i.caption = '','attachment',i.caption), 
+               e.log_entry_id, concat('migrated/',d.docId,'.jpg'), i.caption 
+        from HourLog.docs d inner join imageContrib.images i on d.docId = i.id
+        inner join temp_log l on l.id = d.logId
+		inner join log_entry e on e.log_entry_id = l.noteID
+        where d.type = 'IMG';
+        
+    select 'Migrating trouble reports links ..';
+	insert into artifact(type, name, log_entry, resource_id) 
+        select 't',d.docId, e.log_entry_id, d.docId from HourLog.docs d 
+		inner join temp_log l on l.id = d.logId
+		inner join log_entry e on e.log_entry_id = l.noteID
+        where d.type = 'TR';
+		
+	select count(*) into numImg from HourLog.docs where type = 'IMG';	
+	select count(*) into numTR  from HourLog.docs where type = 'TR';
+	select count(*) into numArtf from artifact;
+	
+	select numImg, numTR, numArtf;
+    
+    if numImg + numTR = numArtf then
+	   select 'Migration of artifacts: successful';
+	else
+	   select 'Migration of artifacts: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end 
+##

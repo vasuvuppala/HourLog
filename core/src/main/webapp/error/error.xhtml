@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/error/errorTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+        <h2>Error</h2>
+        <h:outputText value="#{msgs.title} has encountered an error. Please report it to " />
+
+        <p:link href="mailto:#{msgs.supportEmail}?Subject=#{msgs.title}: Feedback"  value="development team"/>. 
+        <h:outputText value="Thank you." /> 
+
+        <h2>Return to #{msgs.title}</h2>
+        <h:outputText value="To go back to #{msgs.title} home page, click " /> <h:link value="here" outcome="home" />
+
+        <h2>Error Message</h2>
+      
+        <h:outputText value="#{pfExceptionHandler.message}" />
+    </ui:define>       
+</ui:composition>

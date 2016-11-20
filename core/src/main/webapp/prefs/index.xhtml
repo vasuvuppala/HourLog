@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                template="/template/hourlogTemplate.xhtml"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html">
+    <ui:define name="content">
+        <h:form>
+            <h:outputText value="You must be logged in to set preferences." rendered="#{empty userSession.user}" />
+            <p:panel header="User Preferences" rendered="#{not empty userSession.user}">
+                <p:panelGrid  styleClass="noBorders centered" > 
+                    <p:row>
+                        <p:column>
+                            <h:outputText value="Default Faciltiy: " /> 
+                        </p:column>
+                        <p:column>
+                            <p:selectOneMenu  style="width:165px" value="#{preferencesView.preferredFacility}"  converter="#{facilityConverter}">                           
+                                <f:selectItems value="#{preferencesView.facilities}" var="fac" itemLabel="#{fac.facilityName}" itemValue="#{fac}"/>
+
+                            </p:selectOneMenu>                       
+                        </p:column>
+                        <p:column>
+                            <h:outputText value="Your default facility." />                       
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <h:outputText value="Theme: " /> 
+                        </p:column>
+                        <p:column>
+                            <p:themeSwitcher id="basic" style="width:165px" value="#{preferencesView.preferredTheme}" >
+                                <f:selectItem itemLabel="Default Theme" itemValue="#{preferencesView.defaultTheme}" />
+                                <f:selectItems value="#{preferencesView.themes}" var="theme" itemLabel="#{theme.name}" itemValue="#{theme.code}"/>
+                            </p:themeSwitcher>                       
+                        </p:column>
+                        <p:column>
+                            <h:outputText value="Certain items may get distorted or become invisible in some themes. Choose 'Default Theme' to switch back to the default Hour Log theme." />                       
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <h:outputText value="Notifications For: " /> 
+                        </p:column>
+                        <p:column>
+                            <p:selectCheckboxMenu label="Facilities" value="#{preferencesView.selectedFacNames}" >
+                                <f:selectItems value="#{preferencesView.facilities}" var="mfac" itemLabel="#{mfac.facilityName}" itemValue="#{mfac.facilityName}"/>
+                            </p:selectCheckboxMenu>                      
+                        </p:column>
+                        <p:column>
+                            <h:outputText value="UOF notifications for the selected facilities will be sent to your SMS address." />                       
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <h:outputText value="SMS Address: " /> 
+                        </p:column>
+                        <p:column>
+                            <p:inputText value="#{preferencesView.inputNotificationAddress}"  validatorMessage="Invalid Email Address">
+                                <f:validateRegex pattern="([\w\.-]*[a-zA-Z0-9_]@[\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z])?" />
+                            </p:inputText>
+                        </p:column>
+                        <p:column>
+                            <h:outputText value="Notifications will be sent to this address. Generally, it should be your SMS email address but can be any email address." />                       
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column colspan="2">
+                            <p:commandButton value="Save" icon="ui-icon-disk" action="#{preferencesView.savePreferences()}" 
+                                             process="@form" style="float: right"/>
+                        </p:column>  
+                        <p:column>
+                            <h:outputText value=" " />                       
+                        </p:column>
+                    </p:row>
+                </p:panelGrid>
+            </p:panel>
+        </h:form>
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:fc="http://java.sun.com/jsf/composite/comps"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core"
+                xmlns:f="http://java.sun.com/jsf/core">
+
+    <h:form id="dashboardForm">
+        <p:poll interval="#{msgs.dashRefreshRate}" update="dashboard"  process="@this"  global="false"  ignoreAutoUpdate="true"/>
+
+        <p:panelGrid id="dashboard" styleClass="headerWidget" >                        
+            <p:row> 
+                <p:column>
+                    <h:outputText  value="Fac" title="Facility"/>                                             
+                </p:column>  
+                <p:column rendered="false">
+                    <h:outputText value="Logbook" title="Logbook" />                                             
+                </p:column>
+                <p:column>
+                    <h:outputText value ="Expr" title="Experiment" />
+                </p:column>
+                <p:column>
+                    <h:outputText value="Sum" title="Summary" />
+                </p:column>
+                <c:forEach items="#{dashboardView.currentSnapshot.beams}" var="bevent">
+                    <p:column rendered="#{not empty bevent.beam}">  
+                        <h:outputText value="#{bevent.beamSystem.name}" title="Beam at #{bevent.beamSystem.name}"/>
+                    </p:column>                                    
+                    <p:column rendered="#{empty bevent.beam}">
+                        <h:outputText value="#{bevent.beamSystem.name}"  title="Beam at #{bevent.beamSystem.name}"/>
+                    </p:column>
+                </c:forEach>
+                <p:column>
+                    <h:outputText value="Mode" title="Mode"/>
+                </p:column>
+                <p:column>
+                    <h:outputText value="Src" title="Source" />
+                </p:column>
+                <p:column>
+                    <h:outputText value="Vlt" title="Vault" />
+                </p:column>                                    
+                <p:column> 
+                    <h:outputText value="Brk" title="Breakdowns"/>
+                </p:column>
+                <p:column>
+                    <h:outputText value="OIC" title="Operator-in-Charge"/>                 
+                </p:column>
+                <p:column>
+                    <h:outputText value="Svc"  title="External Services"/>                 
+                </p:column>
+            </p:row> 
+            <p:row> 
+                <p:column>
+                    <h:outputText id="DBfacility" value="#{userSession.facility.facilityName}" title="#{userSession.facility.description}" styleClass="facilityName"/>
+                    <p:overlayPanel id="DBfacilityPanel" for="DBfacility" 
+                                    dismissable="true" showCloseIcon="true"  rendered="false">
+                        <p:outputPanel  styleClass="noBorders">
+                            <h:outputText value="Switch To: "/>
+                            <p:selectOneButton  value="#{userSession.facility}"  converter="#{facilityConverter}" >                            
+                                <f:selectItems value="#{hourLogManager.facilities}" var="opt" 
+                                               itemLabel="#{opt.facilityName}" itemValue="#{opt}" />
+                                <p:ajax update="@all" />
+                            </p:selectOneButton>
+                        </p:outputPanel>                        
+                    </p:overlayPanel>
+                </p:column>
+ 
+                <p:column>
+                    <h:outputText value="#{dashboardView.currentSnapshot.experiment.number}" 
+                                  title="#{dashboardView.currentSnapshot.experiment.spokesperson} - #{dashboardView.currentSnapshot.experiment.title}">
+                        <f:convertNumber pattern="00000"  minIntegerDigits="5"/>
+                    </h:outputText>
+                </p:column>
+                <p:column>
+                    <h:outputText value="#{dashboardView.currentSnapshot.summary.name}" 
+                                  title="#{dashboardView.currentSnapshot.summary.description}"
+                                  styleClass="#{dashboardView.currentSnapshot.summary.name}"/>              
+                </p:column>
+                <c:forEach items="#{dashboardView.currentSnapshot.beams}" var="bevent">
+                    <p:column rendered="#{not empty bevent.beam}">  
+                        <h:outputText value="&lt;SUP&gt;#{bevent.beam.massNumber}&lt;/SUP&gt;#{bevent.beam.element.symbol}&lt;SUP&gt;#{bevent.beam.charge}+&lt;/SUP&gt; #{bevent.beam.energy}"
+                                      escape="false"/>                    
+                    </p:column>                                    
+                    <p:column rendered="#{empty bevent.beam}">
+                        <ui:fragment rendered="#{not empty bevent.element}">
+                            <h:outputText value="&lt;SUP&gt;#{bevent.massNumber}&lt;/SUP&gt;#{bevent.element.symbol}" escape="false" />
+                            <h:outputText value="&lt;SUP&gt;#{bevent.charge}+&lt;/SUP&gt; "  escape="false" rendered="#{bevent.charge != null}"/>
+                            <h:outputText value=" #{bevent.energy}"  rendered="#{bevent.energy != null}"/>
+                        </ui:fragment>                        
+                        <h:outputText value="" rendered="#{empty bevent.element}"/>                                                                                
+                    </p:column>
+                </c:forEach>
+                <p:column>
+                    <h:outputText value="#{dashboardView.currentSnapshot.mode.name}" title="#{dashboardView.currentSnapshot.mode.description}"/>              
+                </p:column>
+                <p:column>
+                    <h:outputText value="#{dashboardView.currentSnapshot.source.name}" title="#{dashboardView.currentSnapshot.source.description}"/>                                
+                </p:column>
+                <p:column>
+                    <h:outputText value="#{dashboardView.currentSnapshot.vault.name}" title="#{dashboardView.currentSnapshot.vault.description}" />               
+                </p:column>                                      
+                <p:column>                                                                                  
+                    <c:forEach  items="#{dashboardView.currentSnapshot.breakdowns}" var="brkevent">                                                                            
+                        <h:outputText value=" #{brkevent.category.name} "  title="#{brkevent.category.description}" rendered="#{brkevent.failed}"  />                                                                                                                        
+                    </c:forEach>                   
+                </p:column>
+                <p:column>
+                    <h:outputText value="#{dashboardView.currentShift.opInCharge.lastName}" 
+                                  title="#{dashboardView.currentShift.opInCharge.firstName} #{shiftManager.currentShift.opInCharge.lastName}" />                 
+                </p:column>
+                <p:column>
+                </p:column> 
+            </p:row>  
+        </p:panelGrid>
+    </h:form>
+</ui:composition>

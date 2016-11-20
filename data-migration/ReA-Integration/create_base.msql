@@ -1,0 +1,85 @@
+--
+-- Create base data: facilities, beam systems, elements etc
+--
+drop procedure if exists m2o_create_base;
+create procedure m2o_create_base()
+begin
+
+   -- adjust logbook names as they are in olog
+    update logbook
+      set logbook_name = 'CCF Operations' 
+      where logbook_name = 'CCF-Operations';
+    update logbook 
+      set logbook_name = 'ReA Operations' 
+      where logbook_name = 'ReA-Operations';
+    
+    update auth_resource 
+      set name = 'Logbook:ReA Operations' 
+      where name = 'Logbook:ReA-Operations';
+      
+    update auth_resource 
+      set name = 'Logbook:CCF Operations' 
+      where name = 'Logbook:CCF-Operations';
+      
+    -- turn ReA on    
+    update facility 
+	   set in_operation = true 
+       where facility_name = 'ReA';	 	
+    
+    update operations_role  
+	  set name = 'CCF Source Physicist', description = 'CCF Source Physicist'
+      where name = 'Source Physicist';
+      
+    delete from staff_role where role = 8;
+    delete from operations_role where op_role_id = 8;  
+	insert into operations_role(op_role_id,name,description) values    
+	  (8,'ReA Source Physicist','ReA Source Physicist');	
+	insert into staff_role(staff_member,role)
+      select staff_member, 8 
+      from staff_role sr inner join operations_role op on sr.role = op.op_role_id
+      where op.name = 'CCF Source Physicist';    
+	
+	-- migrate breakdown categories		
+    delete from breakdown_category where brkcat_id in (15,16);
+	insert into breakdown_category(brkcat_id,name,description) 
+       values (15, 'RFQ', 'Radio Frequqncy Quadrupole'),
+              (16, 'SRC', 'Source');             
+	
+    delete from source where source_id >= 3 and source_id <= 9;   	
+	insert into source(source_id,facility,name,description) values
+       (3,2,'ISRC1', 'LA Source'), 
+       (4,2,'ISRC2', 'LB Calutron Source'),
+       (5,2,'EBIT1', 'Electron Breeding Ion Trap'),
+       (6,2,'BCB', 'Beam Cooler Buncher'),
+       (7,2,'N4GC', 'N4 Gas Cell Stopper'),
+       (8,2,'N4CYC', 'LN4 Cyclotron Stopper'),
+       (9,2,'CCF', 'Coupled Cyclotron Facility');      
+
+    -- modes
+    delete from mode where mode_id in (3,4);
+    insert into mode(mode_id,name,description, active) values
+      (3, 'IND', 'CCF and ReA operating independently', 1),
+      (4, 'SER', 'CCF and ReA operating in series', 1);      
+	update mode set description = 'K500 and K1200 Coupled',    active = 0 where name = 'COU'; 
+    update mode set description = 'K500 and K1200 Standalone', active = 0 where name = 'STD';     
+	
+    delete from vault where vault_id in (13,14,15);
+    insert into vault(vault_id,facility,name,description) values
+      (13,2,'ATTPC','Active Target Time Projection Chamber, BTS31'), 
+      (14,2,'GPL','General Purpose Line, BTS33'), 
+      (15,2,'JENSA ','Jet Experiments in Nuclear Structure and Astrophysics, BTS34');
+	     
+    -- system properties
+    delete from system_property where name = 'OLOGSVC_BASE_URI';
+    insert into system_property(name,prop_value) values
+      ('OLOGSVC_BASE_URI', 'https://controls.frib.msu.edu/Olog/resources');
+       
+    -- 
+    --
+    
+	select 'Created ', count(*), 'operations roles' from operations_role;
+	select 'Created ', count(*), 'logbooks' from logbook;
+	select 'Created ', count(*), 'breakdown category' from breakdown_category;
+
+end	
+##

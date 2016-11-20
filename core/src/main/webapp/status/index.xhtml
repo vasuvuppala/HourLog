@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                template="/template/hourlogTemplate.xhtml" >
+    <ui:define name="content" >        
+        <h:form id="expform">
+            <h:outputText value="External Service Status" styleClass="heading"/>
+            <p:spacer height="10"/>
+           
+            <p:dataTable id="statusTable" var="srec" value="#{statusView.externalService}"
+                         sortMode="multiple"
+                         emptyMessage="No services found."
+                         scrollRows="25"  liveScroll="true"  scrollable="true" scrollHeight="#{msgs.experimentsScrollWindow}" >
+                <f:facet  name="header">
+                    <h:outputText value="Service Status"/>
+                </f:facet>
+                <p:column headerText="Name" sortBy="#{srec.name}">
+                    <h:outputText value="#{srec.name}"/>
+                </p:column>
+                <p:column headerText="Description" >
+                    <h:outputText value="#{srec.description}"/>
+                </p:column>
+                <p:column headerText="Status"  width="5%">
+                    <h:outputText value="#{srec.status}"/>
+                </p:column>
+                <p:column headerText="Last Serviced At" >
+                    <h:outputText value="#{srec.lastServicedAt}"/>
+                </p:column>
+                <p:column headerText="Status Updated At" >
+                    <h:outputText value="#{srec.lastServicedAt}"/>
+                </p:column>
+                <p:column headerText="Message" >
+                    <h:outputText value="#{srec.statusMessage}" />
+                </p:column>                                            
+            </p:dataTable>
+        </h:form>      
+    </ui:define>       
+</ui:composition>

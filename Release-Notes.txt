@@ -1,0 +1,146 @@
+
+
+Copyright (c) Facility for Rare Isotope Beam (FRIB)
+
+Release Notes: Hour Log
+
+Overview: Hour Log is a system for managing operational data of facilities at NSCL/FRIB. 
+
+------------------------------------------------------
+Hour Log v1.2.0  Date: 2015-October-29
+
+Summary of Changes from Previous Version:
+  - Added Beam Report
+  - Added charge and energy for ReA beams
+  - Fixed bug that causes reports to fail when a summary is made inactive
+  - Connection errors from external services such as Olog are now not shown to the user
+  - Fixed 'user in OIC list but not in operators list' bug
+  - status of external services is now saved in database.
+  - Added External Service status page 
+  - Time period to edit entries and back-date entries changed to 2880 minutes
+  - Refactored database schema: removed extraneous tables
+  - Report results are displayed in a new tab so that they can be bookmarked
+  - Refresh period of log entries changed to 60 seconds (from 30) 
+  - Approved Experiments are refreshed every hour
+  - Experiments and Training cache pages can be manually refreshed
+  - Olog service is monitored/pinged periodically
+       
+Known Defects: 
+  - Olog identifies authors by their login/email IDs (not numeric IDs). For some authors, whose login IDs are not kept in the user database,
+    it is not possible to get their details. So their first/last names are shown as 'Unknown'.  
+  - In Hour Log Operations reports and Experiment Reports, slight discrepancy in UOF breakup (exp and excl) compared to old Hour Log
+  - Generating reports for experiments that have not started or do not have any events, gives error
+  - In Breakdown reports, discrepancy in breakdowns compared to old Hour Log. However, it matches with the breakdowns in the Operations reports.
+  - 'next/previous 9/24 hour' buttons do not get disabled at the end times, in both Log and Notes pages
+  - 'next/previous 9/24 hour' buttons in Notes page reset selected logbooks to the Facility Operations Logbook
+  - The auto-generated shift log entry is visible only after some time (after next refresh) 
+  - In management pages, the delete pop-up shows artefacts from previous validation errors 
+  - Trouble Reports links open up Intra Enterprise but do not open the page of the trouble report. This is an issue
+    with Trouble Report System. Business IT group is working on solving this issue. It works fine with Firefox (workaround).
+  - It is possible to that some Trouble Reports may not get cached and hence not shown in Hour Log (new TRs with incident date more than
+    a week in the past). Business IT group has been requested to improve the Trouble Reports API to fix this issue.
+  - User Manual page is disabled
+  - Charts come up as blanks in prints of reports (due to limitations of the component library).
+  - A facility manager can change facility data for all facilities, not just her own
+  - On Chrome only, sometimes, a log entry can be edited and saved without making any changes 
+  - Summary Report for 1st week of 2003 does not work, as there is no data for that week.  
+    
+Hour Log v1.1.0  Date: 2015-June-11
+
+Summary of Changes from Previous Version:
+  - Notes are now stored in Olog
+  - ReA is added as a facility, and its sources, vaults, Source Physicists etc are also added
+  - Mode is changed to IND (facility operating independently) and SER (CCF and ReA operating in series)
+  - Searches in 'Notes Page' can span multiple logbooks in Olog
+  - Descriptions of modes, sources, vaults, summaries, and breakdown categories are shown as tooltips
+  - RFQ and SRC are added as breakdown categories
+  - OTH is shown as the last breakdown category
+  - All configuration properties now stored in JNDI
+  - External services status page
+  - Sources, vaults, breakdowns, summaries etc now have 'active' attribute
+  - Simultaneous updates to shift data by multiple users is not allowed (concurrency)
+  - Upgraded to PrimeFaces 5.2  
+  
+Known Defects: 
+  - Olog identifies authors by their login/email IDs (not numeric IDs). For some authors, whose login IDs are not kept in the user database,
+    it is not possible to get their details. So their first/last names are shown as 'Unknown'.  
+  - In Hour Log Operations reports and Experiment Reports, slight discrepancy in UOF breakup (exp and excl) compared to old Hour Log
+  - Generating reports for experiments that have not started or do not have any events, gives error
+  - In Breakdown reports, discrepancy in breakdowns compared to old Hour Log. However, it matches with the breakdowns in the Operations reports.
+  - 'next/previous 9/24 hour' buttons do not get disabled at the end times, in both Log and Notes pages
+  - 'next/previous 9/24 hour' buttons in Notes page reset selected logbooks to the Facility Operations Logbook
+  - The auto-generated shift log entry is visible only after some time (after next refresh) 
+  - In management pages, the delete pop-up shows artefacts from previous validation errors 
+  - Trouble Reports links open up Intra Enterprise but do not open the page of the trouble report. This is an issue
+    with Trouble Report System. Business IT group is working on solving this issue. It works fine with Firefox (workaround).
+  - It is possible to that some Trouble Reports may not get cached and hence not shown in Hour Log (new TRs with incident date more than
+    a week in the past). Business IT group has been requested to improve the Trouble Reports API to fix this issue.
+  - In Breakdown Reports, breakdown category selection is disabled
+  - User Manual page is disabled
+  - Charts come up as blanks in prints of reports (due to limitations of the component library). 
+  - The URL /hourlog/report/experiment?number=xxx does not have a facility option (probably not required)
+    
+  
+
+------------------------------------------------------
+Hour Log v1.0.1  Date: 2015-Apr-08
+
+Summary of Changes from Previous Version:
+  - Fixed concurrent update defect
+  - Added the following resources to API: events, notes
+  - Updated API Manual
+  - Added Trainings pages (under Cache menu)
+  - Added bookmark-able Experiment Report page (for A1900 group web page)
+  - During a new log entry, when unlock button is pressed, the status fields are updated with the latest status
+  - Occurrence date can be set to 24 hours in the past
+  - Authors, and users with EDIT_RECENT privileges, can change log entries in the past 24 hours
+  - Occurrence date can be set to any time in the past 24 hours
+  - Updated link to DataU canonical URL (intra-gw). 
+  - Added link to Test Server
+  - Users subscribe to facility UOF notifications through 'Preferences' (and not through the Shift page)
+  - Clock sync'd with server
+  - Test instances are identified by a banner at the top of the page
+  - Added user management page (under Admin menu)
+  - Fixed changing beams from 'None' to something else, which used to cause error 
+  - Trouble Reports cache is sync'd immediately when 'Add TR' button is clicked
+  - Beams are sorted by element, mass, charge, and energy
+  - Fixed intermittent glitches with log status/edits
+  - Fixed potential defect with recent edit time-window and occurrence backdate time-window  
+  
+Known Defects: 
+  - In Hour Log Operations reports and Experiment Reports, slight discrepancy in UOF breakup (exp and excl) compared to old Hour Log
+  - In Breakdown reports, discrepancy in breakdowns compared to old Hour Log. However, it matches with the breakdowns in the Operations reports.
+  - 'next/previous 9/24 hour' buttons do not get disabled at the end times, in both log and notes pages
+  - The auto-generated shift log entry is visible only after some time (after next refresh) 
+  - In management pages, the delete pop-up shows artefacts from previous validation errors 
+  - Trouble Reports links open up Intra Enterprise but do not open the page of the trouble report. This is an issue
+    with Trouble Report System. Business IT group is working on solving this issue. It works fine with Firefox (workaround).
+  - In Breakdown Reports, breakdown category selection is disabled
+  - User Manual page is disabled
+  - Charts come up as blanks in prints of reports (due to limitations of the component library). 
+  
+------------------------------------------------------
+Hour Log v1.0.0  Date: 2015-Mar-02
+
+Summary of Changes from Previous Version:
+  - Initial version
+  
+Known Defects: 
+  - While editing a log entry, if the beams/source are modified and the entry is backdated,  the beams/source are 
+    switched to the values at the backdated time. The workaround is to backdate first and then edit the 
+    beams, or vice-versa.
+  - In Hour Log reports and Experiment Reports, slight discrepancy in UOF breakup (exp and excl) compared to old Hour Log
+  - In Breakdown reports, discrepancy in breakdowns compared to old Hour Log
+  - 'next/previous 9/24 hour' buttons do not get disabled at the end times, in both log and notes pages
+  - The auto-generated shift log entry is visible only after some time (after next refresh) 
+  - In management pages, the delete pop-up shows artefacts from previous validation errors
+  - Changes to facility base data (vaults, sources etc) are not immediately visible on other pages due to caching
+    of data. To see them immediately, application needs to be restarted. 
+  - Trouble Reports links open up Intra Enterprise but do not open the page of the trouble report. This is an issue
+    with Trouble Report System. Business IT group is working on solving this issue.
+  - In Breakdown Reports, breakdown category selection is disabled
+  - Access for browsing log entries is not restricted
+  - User Manual page is disabled
+  - Charts come up as blanks in prints of reports (due to limitations of the component library).  
+  
+------------------------------------------------------

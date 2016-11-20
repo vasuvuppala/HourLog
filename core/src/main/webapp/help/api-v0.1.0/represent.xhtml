@@ -1,0 +1,299 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"                
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:fc="http://java.sun.com/jsf/composite/comps">
+
+    <h3>Resource Representations</h3>
+    A resource can be manifested or encoded in various formats: binary, XML, JSON, Atom etc. 
+    The #{msgs.title} API can represent resources in different formats. Currently it supports JSON and XML representations.
+    The desired representations must be specified through HTTP ACCEPT header:
+    <ul>
+        <li>Accept: application/json</li>
+        <li>Accept: application/xml</li>               
+    </ul>
+    <p>Example representations for some of the resources are given below. 
+     <i>Note that the resource attribute names match the XML tags and JSON names. 
+         However, there can be extraneous attributes in the API's response, and they must be ignored. 
+         Only the attributes listed  in the Resources Section above form the API.</i></p>
+
+    <p:panel header='Representations'  toggleable="true">
+        <p:tabView>
+            <p:tab title="beam: xml">
+                <pre name="code" class="brush:xml">
+&lt;beam&gt;
+  &lt;system&gt;K500&lt;/system&gt;
+  &lt;elementName&gt;Calcium&lt;/elementName&gt;
+  &lt;symbol&gt;Ca&lt;/symbol&gt;
+  &lt;massNumber&gt;48&lt;/massNumber&gt;
+  &lt;elementCharge&gt;0&lt;/elementCharge&gt;
+  &lt;energy&gt;12.28&lt;/energy&gt;
+&lt;/beam&gt;
+                </pre>
+            </p:tab>
+            <p:tab title="experiment: json">
+                <pre name="code" class="brush:xml">
+ {          
+    "description": "Shutdown for maintenance tasks, both maintenance days and longer maintenance shutdowns",
+    "number": 301,
+    "title": "Maintenance Shutdown"
+ }
+                </pre>
+            </p:tab>
+            <p:tab title="event: json">
+                <pre name="code" class="brush:xml">
+  {
+        "author": {
+            "email": "kwan@nscl.msu.edu",
+            "firstName": "Elaine",
+            "lastName": "Kwan",
+            "loginId": "kwan",
+            "userId": 2994
+        },
+        "enteredAt": "2015-02-24T23:03:00-05:00",
+        "logText": "Co-65 to AC233. Beam currents at Z001F-C=62.4 enA  10% chopper, Z030F-C = 9.7E-8 enA  10%chopper, Z030F-C = 1.3e-7 enA  no chopper.",
+        "occurredAt": "2015-02-24T23:03:00-05:00",
+        "status": [
+            {
+                "name": "A1900",
+                "type": "BEAM",
+                "value": "65 Co null null"
+            },
+            {
+                "name": "SUMMARY",
+                "type": "OTHER",
+                "value": "EXR"
+            }
+        ]
+    }
+                </pre>
+            </p:tab> 
+            <p:tab title="note: json">
+                <pre name="code" class="brush:xml">
+    {
+        "author": {
+            "email": "steiner@nscl.msu.edu",
+            "firstName": "Mathias",
+            "lastName": "Steiner",
+            "loginId": "steiner",
+            "userId": 860
+        },
+        "entered_at": "2015-03-04T07:02:07-05:00",
+        "logText": "It was probably a mistake to wish Larry 'Good Luck.'  SuSI quenched 20 seconds later.  
+                    Larry is taking stock of the situation. We may decide to begin this run on O-18 and switch at a later time; 
+                    ARTEMIS is needed for the Ca-48 beam development starting the 16th.",
+        "occurred_at": "2015-03-04T07:02:07-05:00"
+    }
+                </pre>
+            </p:tab>           
+            
+            <p:tab title="shift: xml">
+                <pre name="code" class="brush:xml">
+&lt;shift&gt;
+    &lt;startTime&gt;2014-09-02T17:43:00-04:00&lt;/startTime&gt;
+    &lt;operatorInCharge&gt;      
+        &lt;firstName&gt;Thomas&lt;/firstName&gt;
+        &lt;lastName&gt;Beal&lt;/lastName&gt;
+        &lt;loginId&gt;beal&lt;/loginId&gt;        
+    &lt;/operatorInCharge&gt;
+    &lt;experimenterInCharge/&gt;
+    &lt;staffList&gt;
+        &lt;shiftStaff&gt;
+            &lt;employee&gt;               
+                &lt;firstName&gt;Dallas&lt;/firstName&gt;
+                &lt;lastName&gt;Cole&lt;/lastName&gt;
+                &lt;loginId&gt;cole&lt;/loginId&gt;               
+            &lt;/employee&gt;
+            &lt;role&gt;
+                &lt;description&gt;Source Physicist&lt;/description&gt;
+                &lt;name&gt;Source Physicist&lt;/name&gt;             
+            &lt;/role&gt;
+        &lt;/shiftStaff&gt;
+        &lt;shiftStaff&gt;...&lt;/shiftStaff&gt;
+        &lt;shiftStaff&gt;...&lt;/shiftStaff&gt;
+        &lt;shiftStaff&gt;...&lt;/shiftStaff&gt;
+        &lt;shiftStaff&gt;...&lt;/shiftStaff&gt;
+        &lt;shiftStaff&gt;...&lt;/shiftStaff&gt;
+    &lt;/staffList&gt;
+&lt;/shift&gt;                        
+                </pre>
+            </p:tab>
+            <p:tab title="shift: json">
+                <pre name="code" class="brush:xml">
+"shift": {
+    "experimenterInCharge": "", 
+    "operatorInCharge": {       
+        "firstName": "Thomas", 
+        "lastName": "Beal", 
+        "loginId": "beal",         
+    }, 
+    "staffList": {
+        "shiftStaff": [
+            {
+                "employee": {               
+                    "firstName": "Dallas", 
+                    "lastName": "Cole", 
+                    "loginId": "cole",                    
+                }, 
+                "role": {
+                    "description": "Source Physicist", 
+                    "name": "Source Physicist"                  
+            }, 
+            {
+                "employee": {               
+                    "firstName": "Eric", 
+                    "lastName": "Mollon", 
+                    "loginId": "mollon"                 
+                }, 
+                "role": {
+                    "description": "Operator", 
+                    "name": "Operator"
+            }, 
+            {
+                "employee": {                   
+                    "firstName": "Tom", 
+                    "lastName": "Ginter", 
+                    "loginId": "ginter"                
+                }, 
+                "role": {
+                    "description": "Beam Physicist", 
+                    "name": "Beam Physicist"                 
+                }
+            }, 
+            {
+                "employee": {                    
+                    "firstName": "Rogelio", 
+                    "lastName": "Rosas", 
+                    "loginId": "rosas"                     
+                }, 
+                "role": {
+                    "description": "Cryogenics Engineer", 
+                    "name": "Cryogenics Engineer"                    
+                }
+            }, 
+            {
+                "employee": {                  
+                    "firstName": "Mathias", 
+                    "lastName": "Steiner", 
+                    "loginId": "steiner"                   
+                }, 
+                "role": {
+                    "description": "Beam Coordinator", 
+                    "name": "Beam Coordinator"                   
+                }
+            }, 
+            {
+                "employee": {                    
+                    "firstName": "Jon", 
+                    "lastName": "Bonofiglio", 
+                    "loginId": "bonofigl"                    
+                }, 
+                "role": {
+                    "description": "Maintenance Engineer", 
+                    "name": "Maintenance Engineer"                   
+                }
+            }
+        ]
+    }, 
+    "startTime": "2014-09-02T17:43:00"
+}                
+                </pre>
+            </p:tab>
+            
+            <p:tab title="shiftStaff: json">
+                <pre name="code" class="brush:xml">
+{
+    "employee": {       
+        "firstName": "Dallas", 
+        "lastName": "Cole", 
+        "loginId": "cole",           
+    }, 
+    "role": {
+        "description": "Source Physicist", 
+        "name": "Source Physicist", 
+    }
+}                
+                </pre>
+            </p:tab>
+            <p:tab title="shiftStaff: xml">
+                <pre name="code" class="brush:xml">
+&lt;shiftStaff&gt;
+    &lt;employee&gt; 
+        &lt;firstName&gt;Mathias&lt;/firstName&gt;
+        &lt;lastName&gt;Steiner&lt;/lastName&gt;
+        &lt;loginId&gt;steiner&lt;/loginId&gt;   
+    &lt;/employee&gt;
+    &lt;role&gt;
+        &lt;description&gt;Beam Coordinator&lt;/description&gt;
+        &lt;name&gt;Beam Coordinator&lt;/name&gt;
+    &lt;/role&gt;
+&lt;/shiftStaff&gt;                       
+                </pre>
+            </p:tab>
+            
+            <p:tab title="summaryReport: xml">
+                <pre name="code" class="brush:xml">
+&lt;summaryReport&gt;
+    &lt;facility&gt;
+        &lt;description&gt;Coupled Cyclotron Facility&lt;/description&gt;      
+        &lt;facilityName&gt;CCF&lt;/facilityName&gt;      
+    &lt;/facility&gt;
+    &lt;experiment&gt;      
+        &lt;description&gt;
+        Shutdown for maintenance tasks, both maintenance days and longer maintenance shutdowns
+        &lt;/description&gt;
+        &lt;number&gt;301&lt;/number&gt;
+        &lt;title&gt;Maintenance Shutdown&lt;/title&gt;
+    &lt;/experiment&gt;
+    &lt;mode&gt;
+        &lt;description&gt;Coupled&lt;/description&gt;
+        &lt;modeId&gt;1&lt;/modeId&gt;
+        &lt;name&gt;COU&lt;/name&gt;
+    &lt;/mode&gt;
+    &lt;source&gt;
+        &lt;name&gt;ART&lt;/name&gt;
+        &lt;description&gt;Artemis: Room-temperature source.&lt;/description&gt;
+    &lt;/source&gt;
+    &lt;vault&gt;
+        &lt;active&gt;true&lt;/active&gt;
+        &lt;description&gt;K1200&lt;/description&gt;
+        &lt;name&gt;K12&lt;/name&gt;   
+    &lt;/vault&gt;
+    &lt;beamList&gt;
+        &lt;beam&gt;
+            &lt;system&gt;K500&lt;/system&gt;
+            &lt;elementName&gt;Calcium&lt;/elementName&gt;
+            &lt;symbol&gt;Ca&lt;/symbol&gt;
+            &lt;massNumber&gt;48&lt;/massNumber&gt;
+            &lt;elementCharge&gt;0&lt;/elementCharge&gt;
+            &lt;energy&gt;12.28&lt;/energy&gt;
+        &lt;/beam&gt;
+        &lt;beam&gt;...&lt;/beam&gt;
+        &lt;beam&gt;...&lt;/beam&gt;
+    &lt;/beamList&gt;
+    &lt;statusList&gt;
+        &lt;status&gt;
+        &lt;timeStamp&gt;2014-09-02T12:00:00-04:00&lt;/timeStamp&gt;
+        &lt;statusName&gt;SOF&lt;/statusName&gt;
+        &lt;statusDescription&gt;Scheduled off&lt;/statusDescription&gt;
+        &lt;/status&gt;
+    &lt;/statusList&gt;
+    &lt;availabilityList&gt;
+        &lt;availability&gt;
+            &lt;days&gt;1&lt;/days&gt;
+            &lt;percentage&gt;90.66715374108837&lt;/percentage&gt;
+        &lt;/availability&gt;
+        &lt;availability&gt;...&lt;/availability&gt;
+        &lt;availability&gt;...&lt;/availability&gt;
+        &lt;availability&gt;...&lt;/availability&gt;
+    &lt;/availabilityList&gt;
+    &lt;shift&gt;...&lt;/shift&gt;
+&lt;/summaryReport&gt;
+              
+                </pre>
+            </p:tab>
+        </p:tabView>
+    </p:panel>
+</ui:composition>

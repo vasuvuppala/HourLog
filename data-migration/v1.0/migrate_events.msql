@@ -1,0 +1,301 @@
+--
+-- migrate events i.e. changes in facility status, breakdowns experiments, sources etc
+--
+drop procedure if exists migrate_facility_status;
+create procedure migrate_facility_status(IN base_num INTEGER)
+begin
+    declare numLogDetails, numLogChanges, numEventsNew INT default 0;
+	set @CCF_FACILITY_ID := 1;
+    
+	call migrate_main_events(base_num);
+	call migrate_sub_events_log(base_num);
+    call migrate_sub_events_chg(base_num);
+    call delete_non_events();
+	
+	select 'Events without log entry = ', count(*) from event where note is null;	
+	select 'Migrated', count(*), 'summary events' from summary_event;
+	select 'Migrated', count(*), 'source events'  from source_event;
+	select 'Migrated', count(*), 'vault events' from vault_event;
+	select 'Migrated', count(*), 'experiment events' from expr_event;
+	select 'Migrated', count(*), 'mode events'  from mode_event;
+	select 'Migrated', count(*), 'beam events'  from beam_event;
+	select 'Migrated', count(*), 'breakdown events'  from breakdown_event;
+	
+    select count(*) into numLogDetails from HourLog.logDetails;
+    select count(*) into numLogChanges from HourLog.logChanges;
+	select count(*) into numEventsNew from event;
+	
+	select numEventsNew, numLogDetails, numLogChanges;
+	if numLogDetails + numLogChanges = numEventsNew then
+	   select 'Migration of status events: successful';
+	else
+	   select 'Migration of status events: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+    
+end	
+##
+--
+-- Migrate main events: log entries and changes
+--
+drop procedure if exists migrate_main_events;
+create procedure migrate_main_events(IN base_num INTEGER)
+begin	
+	-- current events 	
+    insert into event(event_id,facility,obsoleted_by,reported_by,occurred_at,event_entered_at,log_entered_at,note)  
+	  select l.id, @CCF_FACILITY_ID, null, l.userID, l.ocrDateTime, l.reported_at, l.reported_at, l.noteID
+	  from temp_log l;
+
+    --	insert obsoleted events    
+    insert into event(event_id,facility,obsoleted_by,reported_by,occurred_at,event_entered_at,log_entered_at,note)
+       select base_num + t1.id, @CCF_FACILITY_ID, t1.logId, t1.userID, t1.ocrDateTime,t1.reported_at, t1.reported_at, t1.parentNoteID                      
+       from temp_chg t1; 
+end	  
+##
+--
+-- Migrate sub-events (status, experiment, breakdown etc) for log entries
+--
+drop procedure if exists migrate_sub_events_log;
+create procedure migrate_sub_events_log(IN base_num INTEGER)
+begin	
+	declare no_more_rows BOOLEAN default FALSE;
+	declare c_num INT;
+	declare c_name VARCHAR(32);
+	declare cur1 cursor for select num, name from temp_brk;
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;		
+	
+    select 'Migrating sub-events for log entries ..';
+    drop table if exists temp_logevent;
+    set @row := 0;
+	create table temp_logevent select l.*, @row := @row + 1 as snum 
+       from temp_log l order by ocrDateTime ASC;
+    -- insert a dummy initial entry. set a1900 to make the first record for a1900 different
+    insert into temp_logevent(snum, a1900Element) values (0,0); 
+      
+    alter table temp_logevent add unique index(snum), add unique index(id);
+    
+    -- facility status events
+    insert into summary_event(summary,event)  
+	  select b.summary,b.id from temp_logevent b 
+      inner join temp_logevent a ON  b.snum = a.snum + 1 
+      where not a.summary <=> b.summary;
+
+	-- source events
+	insert into source_event(source,event)  
+	  select b.source, b.id from temp_logevent b 
+      inner join temp_logevent a ON  b.snum = a.snum + 1 
+      where not a.source <=> b.source;
+	
+	-- vault events  
+	insert into vault_event(vault,event)  
+	  select b.vault, b.id from temp_logevent b 
+      inner join temp_logevent a ON   b.snum = a.snum + 1 
+      where not a.vault <=> b.vault;
+
+	-- mode events
+	insert into mode_event(mode,event)  
+	  select b.mode, b.id from temp_logevent b 
+      inner join temp_logevent a ON  b.snum = a.snum + 1 
+      where not a.mode <=> b.mode;
+
+	-- experiment events
+	insert into expr_event(experiment,event)  
+	  select b.experiment_number, b.id from temp_logevent b 
+      inner join temp_logevent a ON  b.snum = a.snum + 1 
+      where not a.experiment_number <=> b.experiment_number;
+	
+    -- beam events
+	insert into beam_event(beam_system,beam,event) 
+	   select 1, IF(b.k500Beam = 0, NULL, b.k500Beam), b.id from temp_logevent b 
+       inner join temp_logevent a ON  b.snum = a.snum + 1
+       where not a.k500Beam <=> b.k500Beam;
+	
+    insert into beam_event(beam_system,beam,event) 
+	   select 2, IF(b.k1200Beam = 0, NULL, b.k1200Beam), b.id from temp_logevent b 
+       inner join temp_logevent a ON  b.snum = a.snum + 1 
+       where not a.k1200Beam <=> b.k1200Beam;
+	
+	insert into beam_event(beam_system,element,charge,energy,mass_number,event) 
+	   select 3,IF(b.a1900Element = 0,NULL,b.a1900Element), b.a1900Charge, b.a1900Energy, b.a1900MassNumber, b.id 
+	   from temp_logevent b 
+       inner join temp_logevent a ON  b.snum = a.snum + 1 
+       where not (a.a1900Energy <=> b.a1900Energy and a.a1900MassNumber <=> b.a1900MassNumber and a.a1900Element <=> b.a1900Element and a.a1900Charge <=> b.a1900Charge);	   
+	
+	-- breakdown events	
+	open cur1;
+	brk_loop: loop
+	    fetch cur1 into c_num, c_name;
+		if (no_more_rows) then
+		    leave brk_loop;
+		end if;
+		set @stmt := concat('insert into breakdown_event(category,failed,event) select ', c_num, ', b.', c_name, ' - 1 , b.id from temp_logevent b inner join temp_logevent a ON b.snum = a.snum + 1 where not a.',c_name,' <=> b.', c_name);
+		-- select @stmt as 'Query';
+		prepare insert_brkevents from @stmt;
+        execute insert_brkevents;
+	end loop;
+	close cur1;
+
+    -- drop table temp_logevent;
+end
+##
+--
+-- Migrate sub-events (status, experiment, breakdown etc) for log changes
+--
+drop procedure if exists migrate_sub_events_chg;
+create procedure migrate_sub_events_chg(IN base_num INTEGER)
+begin	
+	declare no_more_rows BOOLEAN default FALSE;
+	declare c_num INT;
+	declare c_name VARCHAR(32);
+	declare cur1 cursor for select num, name from temp_brk;
+	declare CONTINUE HANDLER FOR NOT FOUND SET no_more_rows = TRUE;		
+	
+    select 'Migrating sub-events for log changes ..';
+    drop table if exists temp_x1;
+    create table temp_x1 select * from temp_chg;
+    alter table temp_x1 add column logDate DATETIME;
+    update temp_x1 c INNER JOIN temp_log l ON c.logId = l.id
+       set c.logDate = l.ocrDateTime;
+    
+    -- combine log entries and their changes
+    drop table if exists temp_x2 ;
+	create table temp_x2
+       select base_num + id as id, logDate, logId, 1 as logClass, changedDate as logChgDate,  beamQuality, rtStatus, scStatus, inj5Status, inj12Status, k5Status, nLineStatus, k12Status, a19Status, expStatus, rtActivity, scActivity, inj5Activity, inj12Activity, k5Activity, nLineActivity, k12Activity, a19Activity, expActivity, rfStatus, vacStatus, daqStatus, psStatus, ctlStatus, utlStatus, cryStatus, safStatus, othStatus, mode, source, vault, noteID, summary, experimentID, userID, k500Beam, k1200Beam, a1900Energy, a1900MassNumber, a1900Element, a1900Charge, detStatus, magStatus, experiment_number, ecrStatus, dflStatus, motStatus from temp_x1
+    UNION ALL
+       select id, ocrDateTime as logDate, id as logId,2 as logClass, reported_at as logChgDate, beamQuality, rtStatus, scStatus, inj5Status, inj12Status, k5Status, nLineStatus, k12Status, a19Status, expStatus, rtActivity, scActivity, inj5Activity, inj12Activity, k5Activity, nLineActivity, k12Activity, a19Activity, expActivity, rfStatus, vacStatus, daqStatus, psStatus, ctlStatus, utlStatus, cryStatus, safStatus, othStatus, mode, source, vault, noteID, summary, experimentID, userID, k500Beam, k1200Beam, a1900Energy, a1900MassNumber, a1900Element, a1900Charge, detStatus, magStatus, experiment_number, ecrStatus, dflStatus, motStatus from temp_log;
+	
+    drop table temp_x1;
+    drop table if exists temp_chgevent;
+    set @row := 0;
+	create table temp_chgevent select x.*, @row := @row + 1 as snum 
+       from temp_x2 x order by logDate ASC, logId ASC, logClass ASC, logChgDate ASC;
+    alter table temp_chgevent add unique index(snum), add unique index(id);
+    update temp_chgevent set a1900Energy = null where a1900Energy = 0;
+    update temp_chgevent set a1900Charge = null where a1900Charge = 0;
+    
+    drop table temp_x2;
+    
+    -- facility status events
+    insert into summary_event(summary,event)  
+	  select b.summary,b.id from temp_chgevent b 
+      inner join temp_chgevent a ON  b.id > base_num AND b.snum = a.snum + 1 
+      where not a.summary <=> b.summary;
+
+	-- source events
+	insert into source_event(source,event)  
+	  select b.source, b.id from temp_chgevent b 
+      inner join temp_chgevent a ON  b.id > base_num AND b.snum = a.snum + 1 
+      where not a.source <=> b.source;
+	
+	-- vault events  
+	insert into vault_event(vault,event)  
+	  select b.vault, b.id from temp_chgevent b 
+      inner join temp_chgevent a ON  b.id > base_num AND b.snum = a.snum + 1 
+      where not a.vault <=> b.vault;
+
+	-- mode events
+	insert into mode_event(mode,event)  
+	  select b.mode, b.id from temp_chgevent b 
+      inner join temp_chgevent a ON  b.id > base_num AND b.snum = a.snum + 1 
+      where not a.mode <=> b.mode;
+
+	-- experiment events
+	insert into expr_event(experiment,event)  
+	  select b.experiment_number, b.id from temp_chgevent b 
+      inner join temp_chgevent a ON  b.id > base_num AND b.snum = a.snum + 1 
+      where not a.experiment_number <=> b.experiment_number;
+	
+    -- beam events
+	insert into beam_event(beam_system,beam,event) 
+	   select 1, IF(b.k500Beam = 0, NULL, b.k500Beam), b.id from temp_chgevent b 
+       inner join temp_chgevent a ON  b.id > base_num AND b.snum = a.snum + 1
+       where not a.k500Beam <=> b.k500Beam;
+	
+    insert into beam_event(beam_system,beam,event) 
+	   select 2, IF(b.k1200Beam = 0, NULL, b.k1200Beam), b.id from temp_chgevent b 
+       inner join temp_chgevent a ON  b.id > base_num AND b.snum = a.snum + 1 
+       where not a.k1200Beam <=> b.k1200Beam;
+	
+	insert into beam_event(beam_system,element,charge,energy,mass_number,event) 
+	   select 3,IF(b.a1900Element = 0,NULL,b.a1900Element), b.a1900Charge, b.a1900Energy, b.a1900MassNumber, b.id 
+	   from temp_chgevent b 
+       inner join temp_chgevent a ON  b.id > base_num AND b.snum = a.snum + 1 
+       where not (a.a1900Energy <=> b.a1900Energy and a.a1900MassNumber <=> b.a1900MassNumber and a.a1900Element <=> b.a1900Element and a.a1900Charge <=> b.a1900Charge);	   
+	
+	-- breakdown events	
+	open cur1;
+	brk_loop: loop
+	    fetch cur1 into c_num, c_name;
+		if (no_more_rows) then
+		    leave brk_loop;
+		end if;
+        -- subtracting 1 from the current status value to get failed boolean not a good idea but for now ok. 
+		set @stmt := concat('insert into breakdown_event(category,failed,event) select ', c_num, ', b.', c_name, ' - 1, b.id from temp_chgevent b inner join temp_chgevent a ON  b.id > ', base_num, ' AND b.snum = a.snum + 1 where not a.',c_name,' <=> b.', c_name);
+		-- select @stmt as 'Query';
+		prepare insert_brkevents from @stmt;
+        execute insert_brkevents;
+	end loop;
+	close cur1;
+
+    -- drop table temp_chgevent;
+end
+##
+--
+-- delete non events ie log entries that are purely text entries with no change in status
+--
+drop procedure if exists delete_non_events;
+create procedure delete_non_events()
+begin	
+	
+    select 'Deleting non events ...';
+    
+    -- all status  events
+    drop table if exists temp_se;
+	create table temp_se     
+    select event from  summary_event
+    UNION
+	select event from  source_event  
+	UNION 
+	select event from vault_event  
+	UNION
+	select event from  mode_event  
+	UNION
+	select event from expr_event  
+	UNION
+	select event from  beam_event
+	UNION   
+	select event from breakdown_event;
+
+    alter table temp_se add unique index(event);
+
+    -- all parent status  events
+    drop table if exists temp_pe1;
+    create table temp_pe1 select obsoleted_by as event from event where obsoleted_by is not null and event_id in (select event from temp_se);  
+
+    drop table if exists temp_pe;
+    create table temp_pe select event from temp_se union select event from temp_pe1;
+    alter table temp_pe add unique index(event);
+
+    drop table temp_se, temp_pe1;
+
+    -- all children status  events
+    drop table if exists temp_ce;
+    create table temp_ce select event_id as event from event where obsoleted_by  in (select event from temp_pe);  
+
+    -- all valid events  -  parent and children
+    drop table if exists temp_ve;
+    create table temp_ve select event from temp_pe union select event from temp_ce;
+    alter table temp_ve add unique index(event);
+    
+    select count(*) 'Non events' from event where event_id not in (select event from temp_ve);
+    delete from event where event_id not in (select event from temp_ve) and obsoleted_by is not null;
+    delete from event where event_id not in (select event from temp_ve);
+    
+    -- drop table temp_se;
+    -- drop table temp_pe;
+    -- drop table temp_ce;
+end
+##
+
+
+

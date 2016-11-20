@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageBrkcatForm" >
+            <h:outputText value="Note: Breakdown categories DET and DAQ are used in reports. You must not change their names, otherwise the reports will not be accurate."/>
+            <p:dataTable id="manageSummaryTable" value="#{manageBrkCatView.brkcats}" var="obj" 
+                         scrollRows="25" scrollable="true" scrollHeight="400" liveScroll="true"
+                         rowKey="#{obj.brkcatId}" selectionMode="single" selection="#{manageBrkCatView.selectedBrkcat}"                          
+                         filteredValue="#{manageBrkCatView.filteredBrkcats}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Breakdown Categories"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageBrkCatView.onRowSelect}" update="commandButtons" />               
+                <p:column headerText="Name" sortBy="#{obj.name}" 
+                          filterBy="#{obj.name}" filterMatchMode="contains" >
+                    <h:outputText value="#{obj.name}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Description" sortBy="#{obj.description}" >
+                    <h:outputText value="#{obj.description}" />
+                </p:column>     
+                <p:column headerText="Active" sortBy="#{obj.active}" >                   
+                    <h:outputText value="#{obj.active ? 'Yes': 'No'}"/>
+                </p:column>
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="Add" icon="ui-icon-document" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageBrkCatView.onAddCommand}" oncomplete="PF('objInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":objInputDlg"  process="@this"                                          
+                                             actionListener="#{manageBrkCatView.onEditCommand}"
+                                             oncomplete="PF('objInputWid').show()" disabled="#{empty manageBrkCatView.selectedBrkcat}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageBrkCatView.onDeleteCommand}" oncomplete="PF('objInputWid').show()" 
+                                             disabled="#{empty manageBrkCatView.selectedBrkcat}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="objInputDlg" widgetVar="objInputWid">
+            <h:form id="authROleInputForm">              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="New Breakdown Category" rendered="#{manageBrkCatView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Breakdown Category" rendered="#{manageBrkCatView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Breakdown Category" rendered="#{manageBrkCatView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                    <p:row>
+                        <p:column style="text-align: center">
+                            <p:outputLabel for="name" value="Name"/>
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="name" value="#{manageBrkCatView.inputAction == 'CREATE'? manageBrkCatView.inputBrkcat.name: manageBrkCatView.selectedBrkcat.name}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageBrkCatView.inputAction == 'DELETE'}"/>                      
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="desc"  value="Description" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="desc" value="#{manageBrkCatView.inputAction == 'CREATE'? manageBrkCatView.inputBrkcat.description : manageBrkCatView.selectedBrkcat.description}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageBrkCatView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="act"  value="Active" />
+                        </p:column>
+                        <p:column>
+                            <p:selectBooleanCheckbox id="act" value="#{manageBrkCatView.inputAction == 'CREATE'? manageBrkCatView.inputBrkcat.active : manageBrkCatView.selectedBrkcat.active}" 
+                                         required="true" 
+                                         validatorMessage="Must specify if it is active or not" disabled="#{manageBrkCatView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('objInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageBrkCatView.saveBrkcat()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form"  update="@form :manageBrkcatForm:manageSummaryTable" rendered="#{manageBrkCatView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageBrkCatView.deleteBrkcat()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form" update=":manageBrkcatForm:manageSummaryTable" rendered="#{manageBrkCatView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

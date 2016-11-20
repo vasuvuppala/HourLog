@@ -1,0 +1,13 @@
+-- 
+-- Fix Hour Log data
+--
+drop procedure if exists m2o_fix_data;
+create procedure m2o_fix_data()
+begin  
+	-- fix obsoleted_by entries
+    select 'fixing hour log obsoleted logs ...';
+    update log_entry 
+       set obsoleted_by = null
+    where obsoleted_by = log_entry_id;
+end
+##

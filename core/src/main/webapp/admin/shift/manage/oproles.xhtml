@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageOproleForm" >
+            
+            <p:dataTable id="manageOproleTable" value="#{manageOpRolesView.oproles}" var="obj" 
+                         scrollRows="25" scrollable="true" scrollHeight="400" liveScroll="true"
+                         rowKey="#{obj.opRoleId}" selectionMode="single" selection="#{manageOpRolesView.selectedOprole}"                          
+                         filteredValue="#{manageOpRolesView.filteredOproles}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Operations Roles"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageOpRolesView.onRowSelect}" update="commandButtons" />
+                
+                <p:column headerText="Name" sortBy="#{obj.name}" 
+                          filterBy="#{obj.name}" filterMatchMode="contains" >
+                    <h:outputText value="#{obj.name}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Description" sortBy="#{obj.description}" >
+                    <h:outputText value="#{obj.description}" />
+                </p:column>                
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="Add" icon="ui-icon-document" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageOpRolesView.onAddCommand}" oncomplete="PF('objInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":objInputDlg"  process="@this"                                          
+                                             actionListener="#{manageOpRolesView.onEditCommand}"
+                                             oncomplete="PF('objInputWid').show()" disabled="#{empty manageOpRolesView.selectedOprole}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageOpRolesView.onDeleteCommand}" oncomplete="PF('objInputWid').show()" 
+                                             disabled="#{empty manageOpRolesView.selectedOprole}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="objInputDlg" widgetVar="objInputWid">
+            <h:form>              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="New Operations Role" rendered="#{manageOpRolesView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Operations Role" rendered="#{manageOpRolesView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Operations Role" rendered="#{manageOpRolesView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>                  
+                    <p:row>
+                        <p:column style="text-align: center">
+                            <p:outputLabel for="name" value="Name"/>
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="name" value="#{manageOpRolesView.inputAction == 'CREATE'? manageOpRolesView.inputOprole.name: manageOpRolesView.selectedOprole.name}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageOpRolesView.inputAction == 'DELETE'}"/>                      
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="desc"  value="Description" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="desc" value="#{manageOpRolesView.inputAction == 'CREATE'? manageOpRolesView.inputOprole.description : manageOpRolesView.selectedOprole.description}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageOpRolesView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('objInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageOpRolesView.saveOprole()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form"  update="@form :manageOproleForm:manageOproleTable" rendered="#{manageOpRolesView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageOpRolesView.deleteOprole()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form" update=":manageOproleForm:manageOproleTable" rendered="#{manageOpRolesView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:remove> ---------------------------------- Log History --------------------</ui:remove>  
+    <p:dialog id="notesHistoryPanel"  widgetVar="notesHistoryWid" header="Log History" width="95%">       
+        <h:form id="notesHistoryForm" >
+            <h:outputText value="Note: The time shown below is the time the log entry was made i.e. entered into the system."/>
+            <p:dataTable id="logHistoryTable" var="histLogEnt" value="#{notesView.editedLogEntries}"  
+                         paginator="false"  resizableColumns="true"   rowIndexVar="rowIndex"                                 
+                         scrollable="true" emptyMessage="No edit history! How could you lose it?"> 
+                <p:column headerText="Date" width="10%" styleClass="logColumn">
+                    <h:outputText value="Current" rendered="#{false and rowIndex == 0}"/>
+                    <h:outputText value="#{histLogEnt.event.eventId}" rendered="false"/>
+                    <h:outputText value="#{histLogEnt.logEntry.logEntryId}" rendered="false"/>
+                    <h:outputText value="#{histLogEnt.logEntry.enteredAt}" >
+                        <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="HH:mm:ss"/>
+                    </h:outputText>   
+
+
+                    <h:outputText value="#{histLogEnt.logEntry.enteredAt}" >
+                        <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormat}"/>
+                    </h:outputText>
+
+                </p:column>
+                <p:column headerText="Author" width="10%">
+                    <h:outputText value="#{histLogEnt.logEntry.sysuser.firstName} #{histLogEnt.logEntry.sysuser.lastName}"/> 
+                </p:column>
+                <p:column headerText="Notes" >
+                    <h:outputText value="#{histLogEnt.logEntry.logText}" escape="false"/>
+                    <p:panel styleClass="plainPanel" rendered="#{not empty histLogEnt.logEntry.artifactList}" >
+                        <h:outputText value="Artifacts: "/> 
+                        <ui:repeat var="art" value="#{histLogEnt.logEntry.artifactList}" >                      
+                            <h:outputLink value="#{appProperties.TR_URL}/#{art.resourceId}"   
+                                          target="_blank" rendered="#{art.type == 't'}" >                       
+                                <h:outputText value="#{art.name} "/>
+                            </h:outputLink>
+                            <p:commandLink  ajax="false"  value=" DOC:#{art.name} "                                       
+                                            rendered="#{art.type == 'd'}">                            
+                                <f:setPropertyActionListener target="#{notesView.downloadedFile}" value="#{art}" />
+                                <p:fileDownload value="#{notesView.downloadedFile}" />  
+                            </p:commandLink>
+                            <h:outputText styleClass="ui-icon ui-icon-arrow-1-s" style="display: inline-block;"/>
+                        </ui:repeat> 
+                    </p:panel>
+
+                </p:column>
+
+            </p:dataTable>
+
+        </h:form>
+    </p:dialog>      
+</ui:composition>

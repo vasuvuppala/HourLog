@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageFacilityForm" >
+           
+            <p:dataTable id="manageSummaryTable" value="#{manageFacilityView.facilities}" var="obj" 
+                         scrollRows="25" scrollable="true" scrollHeight="400" liveScroll="true"
+                         rowKey="#{obj.facilityId}" selectionMode="single" selection="#{manageFacilityView.selectedFacility}"                          
+                         filteredValue="#{manageFacilityView.filteredFacilities}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Facilities"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageFacilityView.onRowSelect}" update="commandButtons" />               
+                <p:column headerText="Name" sortBy="#{obj.facilityName}" 
+                          filterBy="#{obj.facilityName}" filterMatchMode="contains" >
+                    <h:outputText value="#{obj.facilityName}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Description" sortBy="#{obj.description}" >
+                    <h:outputText value="#{obj.description}" />
+                </p:column>  
+                <p:column headerText="Operations Logbook" sortBy="#{obj.opsLogbook.logbookName}" >
+                    <h:outputText value="#{obj.opsLogbook.logbookName}" />
+                </p:column>
+                <p:column headerText="In Operation" >
+                    <h:outputText value="#{obj.inOperation? 'Yes': 'No'}" />
+                </p:column>
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="Add" icon="ui-icon-document" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageFacilityView.onAddCommand}" oncomplete="PF('objInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":objInputDlg"  process="@this"                                          
+                                             actionListener="#{manageFacilityView.onEditCommand}"
+                                             oncomplete="PF('objInputWid').show()" disabled="#{empty manageFacilityView.selectedFacility}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageFacilityView.onDeleteCommand}" oncomplete="PF('objInputWid').show()" 
+                                             disabled="#{empty manageFacilityView.selectedFacility}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="objInputDlg" widgetVar="objInputWid">
+            <h:form id="authROleInputForm">              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="New Facility" rendered="#{manageFacilityView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Facility" rendered="#{manageFacilityView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Facility" rendered="#{manageFacilityView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                    <p:row>
+                        <p:column style="text-align: center">
+                            <p:outputLabel for="name" value="Name"/>
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="name" value="#{manageFacilityView.inputAction == 'CREATE'? manageFacilityView.inputFacility.facilityName: manageFacilityView.selectedFacility.facilityName}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageFacilityView.inputAction == 'DELETE'}"/>                      
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="desc"  value="Description" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="desc" value="#{manageFacilityView.inputAction == 'CREATE'? manageFacilityView.inputFacility.description : manageFacilityView.selectedFacility.description}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageFacilityView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="inoper"  value="In Operation" />
+                        </p:column>
+                        <p:column>
+                            <p:selectBooleanCheckbox id="inoper"  
+                                                      value="#{manageFacilityView.inputAction == 'CREATE'? manageFacilityView.inputFacility.inOperation : manageFacilityView.selectedFacility.inOperation}"                                        
+                                          disabled="#{manageFacilityView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="operlb"  value="Operations Logbook" />
+                        </p:column>
+                        <p:column>
+                            <p:selectOneMenu id="operlb"  
+                                             value="#{manageFacilityView.inputAction == 'CREATE'? manageFacilityView.inputFacility.opsLogbook : manageFacilityView.selectedFacility.opsLogbook}"                                        
+                                             converter="#{logbookConverter}" disabled="#{manageFacilityView.inputAction == 'DELETE'}">
+                                <f:selectItems value="#{manageFacilityView.logbooks}" var="olb" itemLabel="#{olb.logbookName}" itemValue="#{olb}"/>
+                            </p:selectOneMenu>
+                        </p:column>
+                    </p:row>
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('objInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageFacilityView.saveFacility()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form"  update="@form :manageFacilityForm:manageSummaryTable" rendered="#{manageFacilityView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageFacilityView.deleteFacility()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form" update=":manageFacilityForm:manageSummaryTable" rendered="#{manageFacilityView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

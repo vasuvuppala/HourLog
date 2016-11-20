@@ -1,0 +1,87 @@
+-- 
+-- Hour Log Data Migration: Migrates data from Current Hour Log to New Hour Log
+-- Version 0.9
+--
+--
+--       The main program
+-- 
+-- use HourLog2Dev;
+
+delimiter ##
+
+source clean_all.msql
+source create_base.msql
+source migrate_users.msql
+source migrate_shifts.msql
+source migrate_logs.msql
+source migrate_artifacts.msql
+source auth.msql
+--
+-- 
+drop procedure if exists migrate_data;
+create procedure migrate_data()
+begin
+    set @MIG_SUCCESS := TRUE;	 
+	
+	call clean_all();
+	call create_base();
+	call migrate_users();
+	call migrate_shifts();
+	call migrate_logs();	
+	call migrate_artifacts();
+    call create_auth();
+	
+	if @MIG_SUCCESS = TRUE then
+		select 'Migration successful';
+	else
+	   select 'Migration failed';
+	end if;	
+end
+##
+--
+-- 
+drop procedure if exists check_current_data;
+create procedure check_current_data()
+begin
+    -- log entries with invalid experiment numbers
+    select distinct experiment_number 'Invalid Experiment Nos' 
+       from HourLog.logDetails 
+       where experiment_number not in 
+          (select exp_number from ApprovedExperiments.Experiments)
+    UNION       
+	select distinct experiment_number 
+       from HourLog.logDetails 
+       where experiment_number not in 
+         (select exp_number from ApprovedExperiments.Experiments);
+         
+	-- Log changes with dangling Log ID
+	select distinct id 'log change ID',logId 'Missing Log ID', changedDate 
+       from HourLog.logChanges 
+       where logId not in (select id from HourLog.logDetails);
+       
+	-- Log entries with no notes
+	select count(*) 'Num of log entries with invalid notes' 
+       from HourLog.logDetails 
+       where noteID != 0 AND noteID not in (select id from HourLog.notes);
+       
+	select count(*) 'Num of log changes with invalid notes' 
+       from HourLog.logChanges 
+       where noteID != 0 AND noteID not in (select id from HourLog.changedNotes);
+       
+	-- invalid users
+	select count(*) 'Num of log entries with invalid users' 
+       from HourLog.logDetails 
+       where userID not in (select empID from Staff.Employees);
+       
+    select distinct peopleID 'Invalid Staff ID' 
+      from HourLog.peopleShift 
+      where peopleID not in (select id from HourLog.people); 
+    
+    select d.docId 'Attachment for logs with missing experiment numbers' 
+        from HourLog.docs d 
+        where d.logId in (select id from HourLog.logDetails where experiment_number not in 
+          (select exp_number from ApprovedExperiments.Experiments));
+end
+##
+
+delimiter ;

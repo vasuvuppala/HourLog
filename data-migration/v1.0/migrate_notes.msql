@@ -1,0 +1,82 @@
+--
+-- migrate notes ie text part of log entries
+--
+drop procedure if exists migrate_notes;
+create procedure migrate_notes(IN base_num INTEGER)
+begin
+	-- truncate log_entry;
+    
+	call migrate_current_notes();
+	call migrate_note_changes(base_num);	
+		
+end	
+##
+--
+-- Migrate notes (log text)
+drop procedure if exists migrate_current_notes;
+create procedure migrate_current_notes()
+begin
+	declare numNotesOld,numNotesNew INT default 0;
+	
+	insert into log_entry(log_entry_id,log_text,logbook,author,sysuser,occurred_at,entered_at)
+	   select n.id,n.notes,1, u.last_name, l.userID, l.ocrDateTime, l.reported_at
+	   from temp_notes n
+	   INNER JOIN temp_log l ON l.noteId = n.id
+       LEFT JOIN sysuser u ON u.user_id = l.userID;
+
+	-- select count(*) into numLogsOld from HourLog.logDetails;
+	-- select count(*) into numLogsBlank from HourLog.logDetails where noteID = 0;
+	-- select count(*) into numLogsNew from log_entry;
+	select count(*) into numNotesOld from HourLog.notes;
+	select count(*) into numNotesNew from log_entry;
+	
+	select numNotesNew, numNotesOld;
+	if numNotesOld = numNotesNew then
+	   select 'Migration of Notes: successful';
+	else
+	   select 'Migration of Notes: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end	
+##
+--
+-- Migrate note changes (changes to log text)
+-- param: base_num - number to be added to ids of log changes and note changes
+--
+drop procedure if exists migrate_note_changes;
+create procedure migrate_note_changes(IN base_num INT)
+begin
+	declare numNotesOld, numNotesNew INT default 0;
+	
+    /*
+    insert into log_entry(log_entry_id, log_text, logbook, author, occurred_at, entered_at, obsoleted_by)
+      select base_num + c.id,c.notes,1, l.userID, l.ocrDateTime, l.changedDate, l.parentNoteId
+      from HourLog.changedNotes c INNER JOIN temp_chg l ON l.noteID = c.id; 
+	*/
+    
+    insert into log_entry(log_entry_id, log_text, logbook, author, sysuser, occurred_at, entered_at)
+      select base_num + c.id, c.notes, 1, u.last_name, l.userID, l.ocrDateTime, l.reported_at
+      from HourLog.changedNotes c 
+      INNER JOIN temp_chg l ON l.noteID = c.id
+      LEFT JOIN sysuser u ON u.user_id = l.userID; 
+      
+    update log_entry e INNER JOIN temp_chg c ON c.noteID + base_num = e.log_entry_id
+       set e.obsoleted_by = c.parentNoteID;
+      
+	-- select count(*) into numLogsOld from HourLog.logChanges;
+	-- select count(*) into numLogsOrphan from HourLog.logChanges 
+    --   where logId not in (select id from HourLog.logDetails);
+    select count(*) into numNotesOld from HourLog.changedNotes;
+	select count(*) into numNotesNew from log_entry where log_entry_id >= base_num;
+	select numNotesOld 'Num of Old Note Changes', numNotesNew 'Num of New Note Changes'; 
+	
+	if numNotesOld = numNotesNew then
+	   select 'Migration of Note changes: successful';
+	else
+	   select 'Migration of Note changes: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end
+##
+
+

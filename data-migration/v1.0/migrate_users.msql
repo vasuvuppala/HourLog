@@ -1,0 +1,57 @@
+--
+-- Migrate users
+--
+drop procedure if exists migrate_users;
+create procedure migrate_users()
+begin
+	declare numNewEmps,numOldEmps,numOldCemps,numNewCemps,numOldRoles,numNewRoles,numInvStaff INT default 0;
+	
+	/* All employees including old ones */
+    insert into sysuser(user_id,first_name,last_name) select empID, empFirstName,empLastName from Staff.Employees;	
+    
+	/*  current employees */	
+	update sysuser e inner join Staff.Person p on p.id = e.user_id 
+        set e.department = p.department, e.current_employee = TRUE, e.email = p.email, e.login_id = p.uniqName; 
+        
+	/*  operations staff and roles */
+    insert into staff_role(staff_role_id,staff_member,role)  
+        select p.id, p.employeeID, r.op_role_id from HourLog.people p, operations_role r, Staff.Person s
+        where s.id = p.employeeID and r.description = p.job;
+    
+    -- sms addresses
+	update sysuser e 
+        inner join HourLog.people p on p.employeeID = e.user_id 
+        inner join HourLog.smsTelco t on p.smsTelco = t.id
+           set e.sms_address = concat(p.smsNumber,'@', t.domain)
+        where p.smsNumber <> '' and t.domain <> '';
+            
+	/* nick names of staff */
+	update sysuser e inner join HourLog.userInfo u on u.uin_usrID = e.user_id 
+	    set e.nick_name = u.uinAbbr; 
+		
+	select count(*) into numNewEmps  from sysuser;
+	select count(*) into numOldEmps  from Staff.Employees;
+	select count(*) into numOldCemps from Staff.Person;
+	select count(*) into numNewCemps from sysuser where current_employee = TRUE;
+	select count(*) into numOldRoles from HourLog.people where job != 0;
+	select count(*) into numNewRoles from staff_role;
+      
+	select numNewEmps,numOldEmps,numOldCemps,numNewCemps,numOldRoles,numNewRoles;
+    
+    -- check for invalid staff members
+    select count(*) into numInvStaff from staff_role r 
+        inner join sysuser e on r.staff_member = e.user_id 
+        where e.current_employee = FALSE;
+	
+	if numInvStaff != 0 then
+		select 'Warning: Number of operations staff who are not employees: ', numInvStaff;
+	end if;
+    
+    if numOldEmps = numNewEmps and numOldCemps = numNewCemps and numOldRoles = numNewRoles then
+	   select 'Migration of users: successful';
+	else
+	   select 'Migration of users: failed';
+	   set @MIG_SUCCESS = FALSE;
+	end if;
+end	
+##

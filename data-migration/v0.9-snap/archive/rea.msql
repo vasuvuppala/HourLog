@@ -1,0 +1,52 @@
+
+--
+--
+drop procedure if exists rea_base;
+create procedure rea_base()
+begin	
+	  
+	insert into operations_role(op_role_id,name,description) values 
+	  (1,'Operator','Operator'), 
+	  (2,'Source Physicist','Source Physicist'),
+	  (3,'Beam Physicist','Beam Physicist'),
+	  (4,'Device Physicist','Device Physicist'),
+	  (5,'Cryogenics Engineer','Cryogenics Engineer'),
+	  (6,'Beam Coordinator','Beam Coordinator'),
+	  (7,'Maintenance Engineer','Maintenance Engineer');	
+	  
+	insert into element(element_id,symbol,name) select id, abbr, name from HourLog.elements;
+	
+	insert into beam(beam_id,beam_system,element,charge,mass_number,energy) select id,1,element,charge,massNumber,energy from HourLog.beams where belongsTo = 'K500';
+	insert into beam(beam_id,beam_system,element,charge,mass_number,energy) select id,2,element,charge,massNumber,energy from HourLog.beams where belongsTo = 'K1200';
+	
+	-- migrate breakdown categories		
+	insert into breakdown_category(brkcat_id,name,description) 
+	   select id,abbr,description from HourLog.breakdownCategories;
+	   
+	-- breakdown status   
+	insert into breakdown_status(brk_status_id,name,description) 
+	   select id,abbr,description from HourLog.breakdowns;	
+
+    insert into facility_status(status_id,name,description)  
+	  select id,abbr,description from HourLog.summaries;
+
+	insert into source(source_id,facility,name,description)  
+	   select id,1,abbr,description from HourLog.sources;  
+	
+    insert into mode(mode_id,name,description)  
+	  select id,abbr,description from HourLog.modes;
+	
+    insert into vault(vault_id,name,description)  
+	   select id,abbr,description from HourLog.vaults;
+	  
+	select 'Created ', count(*), 'beams' from beam;
+	select 'Created ', count(*), 'element' from element;
+	select 'Created ', count(*), 'facilities' from facility;
+	select 'Created ', count(*), 'beam systems' from beam_system;
+	select 'Created ', count(*), 'operations roles' from operations_role;
+	select 'Created ', count(*), 'logbooks' from logbook;
+	select 'Created ', count(*), 'shift status' from shift_status;
+	select 'Created ', count(*), 'breakdown category' from breakdown_category;
+	select 'Created ', count(*), 'breakdown status' from breakdown_status;
+end	
+##

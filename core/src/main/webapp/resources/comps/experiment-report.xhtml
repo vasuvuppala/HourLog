@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:cc="http://java.sun.com/jsf/composite"
+      xmlns:fc="http://java.sun.com/jsf/composite/comps"
+      xmlns:ui="http://java.sun.com/jsf/facelets">
+
+    <!-- INTERFACE -->
+    <cc:interface>
+        <cc:attribute name="reportItem" required="true" /> <!-- report record -->
+        <cc:attribute name="pieModel" required="false" />  <!-- pie chart -->
+        <cc:attribute name="barModel" required="false" />  <!-- bar chart -->     
+        <cc:attribute name="expItems" required="false" /> <!-- corresponding experiment records --> 
+        <cc:attribute name="export" required="false" default="false"/> <!-- corresponding experiment records --> 
+    </cc:interface>
+
+    <cc:implementation>        
+        <p:panelGrid styleClass="noBorders verticalAligned">
+            <p:row rendered="#{not empty cc.attrs.expItems}">
+                <p:column colspan="2"> 
+                    <p:panel>
+                        <h:outputText value="Experiments: " />
+                        <ui:repeat value="#{cc.attrs.expItems}" var="expItem" >
+                            <h:outputText value="#{expItem.experiment.number}"/>
+                            <h:outputText value="-#{expItem.experiment.spokesperson}" rendered="#{not empty expItem.experiment.spokesperson}" />
+                            <p:spacer width="5"/>
+                        </ui:repeat>
+                    </p:panel>
+                </p:column>
+            </p:row>
+            <p:row rendered="#{empty cc.attrs.expItems}">
+                <p:column colspan="2"> 
+                    <p:panel>
+                        <h:outputText value="Experiment: #{cc.attrs.reportItem.experiment.number}" />
+                        <h:outputText value=" (Partial) " rendered="#{cc.attrs.reportItem.partial}"/>
+                        <h:outputText value=" (Ongoing) " rendered="#{cc.attrs.reportItem.ongoing}"/>
+                        <br></br>
+                        <ui:repeat value="#{cc.attrs.reportItem.runtimes}" var="period" >
+                            <h:outputText value="#{period.startDate}">
+                                <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                            </h:outputText>
+                            <h:outputText value=" Through "/>
+                            <h:outputText value="#{period.endDate}">
+                                <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                            </h:outputText>
+                            <br></br>
+                        </ui:repeat>
+                    </p:panel>
+                </p:column>
+            </p:row>
+            <p:row>
+                <p:column colspan="2">
+                    <fc:summary-tree reportItem="#{cc.attrs.reportItem}"/>                     
+                </p:column>
+            </p:row>
+            <p:row>
+                <p:column colspan="2">
+                    <fc:summary-table reportItem="#{cc.attrs.reportItem}" export="#{cc.attrs.export}"/>                       
+                </p:column>
+            </p:row>
+            <p:row>
+                <p:column>
+                    <p:chart type="pie" model="#{cc.attrs.pieModel}"   style="height: 400px"  rendered="#{not empty cc.attrs.pieModel}"/>
+                </p:column>
+                <p:column>
+                    <p:chart type="bar" model="#{cc.attrs.barModel}" style="height:400px" rendered="#{not empty cc.attrs.barModel}"/>
+                </p:column>
+            </p:row>
+            <p:row>
+                <p:column colspan="2">
+                    <fc:breakdown-table reportItem="#{cc.attrs.reportItem}" export="#{cc.attrs.export}"/>
+                </p:column>                
+            </p:row>
+        </p:panelGrid>
+    </cc:implementation>
+</html>

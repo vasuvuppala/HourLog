@@ -1,0 +1,291 @@
+
+/* 
+    Document   : Layout
+    Created on : Oct 16, 2013, 3:48:17 PM
+    Author     : Vasu V <vuppala@frib.msu.org>
+    Description:
+        Purpose of the stylesheet follows.
+
+   TODO: Remove !important from all 
+*/
+
+
+body {
+    font-size: 12px;
+    font-family: Verdana, "Verdana CE",  Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif; 
+    /*width: 100% !important;*/   
+}
+
+a {
+    text-decoration: underline;       
+    color: cadetblue;
+}
+
+
+/* -------------------------------------------------------- */
+
+.centered { 
+    margin: 0 auto;
+}
+
+.experiment a {
+    text-decoration: none;       
+    color: darkslateblue;
+}
+
+.ui-growl {
+    position:absolute;
+    top: 0%;
+    left:75%;
+}
+
+.ui-icon.blueIcon
+{
+    background-image: url("#{resource['images:ui-icons-blue.png']}") !important;
+}
+
+/* datatable column alignment*/
+.colRight {
+    float: right !important;
+}
+
+/*TODO:  does not work */
+.colCenter {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.colLeft {
+    float: left !important;
+}
+/* text wrap around in data table*/
+.ui-datatable td {
+    white-space: normal !important;
+}
+
+
+.ui-clock {
+    background: none;
+    border: none;
+    font-weight:  normal !important;
+    font-size: 12px !important;
+    padding: 0px !important;
+}
+
+
+/* -------------------------------------------------------- */
+
+.title {
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 18px; 
+    font-style: normal;
+    font-weight: bold; 
+    text-decoration: none;
+}
+
+.testTitle {
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 20px; 
+    font-style: normal;
+    font-weight: bold; 
+    color:  #ff0000;
+}
+
+.logDay {
+    color: darkslateblue;
+}
+
+.tableFooter 
+{
+    font-weight: normal;
+}
+
+.headerWidget,
+.headerWidget tr,
+.headerWidget td {
+    background-color: transparent !important;
+    /*padding-bottom: 0 !important;*/
+    /*padding-top: 0 !important;*/
+    /* border-style: none !important;*/
+}
+
+
+ .plainPanel, .plainPanel > * {
+    border: none ;
+    vertical-align: top;
+    padding: 0px !important;
+    margin:  0px !important;
+}
+
+.header
+{
+    font-style: normal;
+    vertical-align: middle;
+    /* left: 15px; */
+    /* padding: 10px; */
+    text-decoration: none;
+    width: 100% !important;
+    background-image: url("#{resource['images:header-bg.png']}"); 
+    background-repeat: repeat;    
+    border: 1px solid LightGray;
+}
+
+
+.alignRight, td.alignRight {
+    text-align: right;
+}
+
+.noBorders>tbody>tr, .noBorders>tbody>tr>td {
+    /* background: none; */ 
+    border: none !important;
+    /* vertical-align: top; */
+}
+
+/* to align a panelGrid to center */
+.centerPanel {
+    margin: 0 auto;
+}
+
+.noBordersNP>tbody>tr, .noBordersNP>tbody>tr>td {
+    /* background: none; */ 
+    border: none !important;
+    padding: 0px !important;
+    /* vertical-align: top; */
+}
+
+.verticalAligned td {
+    vertical-align: top;
+}
+
+.menu {    
+    background-color: transparent !important;
+}
+
+
+.export-grid {
+    margin: 5px auto;
+}
+
+.facilityName { 
+    font-weight: bold;
+    /*font-size:  large;*/
+    /*font-style:  italic;*/
+}
+
+.beamName { 
+    font-weight:  normal;
+}
+
+.beamPos { 
+    display: inline-block; 
+    vertical-align:  middle;
+}
+
+.iconDisplay { 
+    display: inline-block; 
+}
+
+.logColumn {
+    padding: 1px !important;
+    /* margin: 3px !important; */
+    text-align: center;
+}
+
+.newEvent {  
+    font-weight: bold !important;
+}
+
+.reportSectionHeading {  
+    font-weight: bold;
+}
+
+.newEventTitle{  
+    font-style:  italic;
+}
+
+.thinPanel tr .thinPanel td {
+    border: none !important;
+    padding: 0 !important;
+}
+
+.heading {
+    font-size: 18px;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    display: block;
+    text-align: center;
+}
+
+.eventInfo {
+    border: none;
+    background:  transparent;
+    padding: 0;
+}
+
+.reportTotals {
+    font-weight:  bold;
+}
+/* facility summary color codes */
+.SOF {
+    color: #333333;
+}
+
+.UOF {
+    color: #ff0000;
+}
+
+.PDT {
+    color: #eeaa00;
+}
+
+.SDT {
+    color: #ddcc00;
+}
+
+.IDT {
+    color: #eeaa00;
+}
+
+.EXR {
+    color: #33aa00;
+}
+
+.XDT {
+    color: #66aa88;
+}
+
+/* -------------------------------------------------- */
+
+#top {
+    /*position: relative;*/   
+    /* color: black; */
+    /* padding: 5px; */
+    /* margin: 0px 0px 10px 0px; */
+    /* background-image: url('../images/header-bg.png'); */
+    /* background-repeat: repeat; */
+    /* border: 1px solid #000000; */
+
+}
+
+#content {
+    margin: 5px; 
+    /* padding: 10px; */
+    /*width: 98%;*/
+/*    margin-left: auto;
+    margin-right: auto;*/
+    /* border: 0px solid LightGray; */
+    /* border-radius: 7px; */
+    /* box-shadow: 0 0 7px 2px #888888; */
+    /* color: black; */
+
+    /* text-align: left; */
+    /* width: 80%; */
+    /* background-color: #FFFFFF;  */
+}
+
+#bottom {
+    position: relative;
+    color:  #009999;
+    /*padding: 5px;*/
+    /*margin: 10px 0px 0px 0px;*/
+    text-align:  center;
+}

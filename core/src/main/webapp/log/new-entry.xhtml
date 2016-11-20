@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:fc="http://java.sun.com/jsf/composite/comps"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:include src="add-tr.xhtml" />
+    <p:panel toggleable="true" id="inputPanel"  header="New Entry: #{logView.operationsLogbook.logbookName} Logbook">
+        <h:form id="logentform" enctype="multipart/form-data">            
+            <ui:include src="add-entry-panel.xhtml" />           
+        </h:form>
+    </p:panel>  
+</ui:composition>

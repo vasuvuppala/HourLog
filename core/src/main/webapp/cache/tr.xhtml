@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                template="/template/hourlogTemplate.xhtml" >
+    <ui:define name="content" > 
+
+        <h:form id="TRform">
+            <h:outputText value="#{msgs.title}: Trouble Reports" styleClass="heading"/>
+            <p:dataTable id="TRtable" value="#{troubleReportsView.lazyTRModel}" var="tr"                         
+                         rowKey="#{tr.id}" 
+                         paginator="true" rows="#{msgs.trScrollRows}"
+                         paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                         lazy="true" 
+                         filteredValue="#{troubleReportsView.filteredReports}">              
+                <p:column headerText="TR#" sortBy="#{tr.id}" filterBy="#{tr.id}" width="10%">
+                    <h:outputLink value="#{appProperties.TR_URL}/#{tr.id}" target="_blank" >    
+                        <h:outputText value="#{tr.id}" />
+                    </h:outputLink>
+                </p:column>
+                <p:column headerText="Date" sortBy="#{tr.reportDate}"  width="10%">
+                    <h:outputText value="#{tr.reportDate}">
+                        <f:convertDateTime timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatShort}"/>
+                    </h:outputText>
+                </p:column>
+                <p:column headerText="Reporter" filterBy="#{tr.employeeName}" filterMatchMode="contains"  width="10%">
+                    <h:outputText value="#{tr.employeeName} "/>
+                </p:column>
+                <p:column headerText="System" filterBy="#{tr.system}" width="10%">
+                    <h:outputText value="#{tr.system}"/>
+                </p:column>
+                <p:column headerText="Description" filterBy="#{tr.problem}" filterMatchMode="contains" >
+                    <h:outputText value="#{tr.problem}" escape="false"/>
+                </p:column>
+                <f:facet name="footer">     
+                    <h:outputText value="Last Updated On: #{troubleReportsView.TRservice.lastServicedAt}" />
+                    <p:commandButton id="TRrefreshBtn"  value="Refresh" icon="ui-icon-refresh"                                         
+                                     action="#{troubleReportsView.refreshTRs()}" process="@this"  
+                                     title="Update the cache with latest Trouble Reports"
+                                     update=":TRform:TRtable" style="float: right"
+                                     disabled="#{not authView.isValidUser()}" /> 
+                    <p:blockUI block=":TRform:TRtable" trigger="TRrefreshBtn" >                   
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" 
+                                        style="background-color: transparent" />                   
+                    </p:blockUI>
+                </f:facet>
+            </p:dataTable>
+
+        </h:form>
+
+    </ui:define>       
+</ui:composition>

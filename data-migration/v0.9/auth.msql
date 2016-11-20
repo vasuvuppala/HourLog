@@ -1,0 +1,64 @@
+--
+-- Create authorization info: roles, operations, permissions etc 
+--
+drop procedure if exists create_auth;
+create procedure create_auth()
+begin
+    truncate auth_permission; 
+    truncate auth_user_role;
+    truncate auth_role;
+    truncate auth_operation;
+    truncate auth_resource;
+    
+    -- authorization base tables
+    insert into auth_role(role_id,role_name,description) values
+      (1, 'OperationsStaff', 'Operations staff for all facilities'),
+      (2, 'FacilityManager-CCF', 'Facility manager for CCF'),
+      (3, 'FacilityManager-ReA', 'Facility manager for ReA'),
+      (4, 'ExecutiveManagement', 'Executive management');   
+      
+    insert into auth_operation(operation_id,name,description) values  
+	  (1,'Create','Can create a log entry'),
+	  (2,'EditAny','Can edit any log entries'),
+      (3,'EditRecent','Can edit recent log entries by others'),
+      (4,'OperateShift','Can start a shift'),
+      (5,'UpdateStatus','Can update status of a facility'),
+	  (6,'Manage','Can manage a facility'),
+      (7,'GenerateReports','Can generate reports'),		  
+	  (8,'Execute','Can run an application');
+      
+    
+    insert into auth_resource(resource_id,name,description) values 
+	  (1,'Facility:*','Any facility'),
+      (2,'Facility:CCF','CCF'), 
+	  (3,'Facility:ReA','ReA'),
+      (4,'Logbook:*','Any logbook'),
+      (5,'Logbook:CCF-Operations','CCF Operations logbook'),
+      (6,'Logbook:ReA-Operations','ReA Operations Logbook'),
+      (7,'Application:HourLog', 'The Hour Log Application');
+      
+    insert into auth_user_role(user,role)
+       select user_id, 1 from sysuser 
+       where user_id in (select distinct staff_member from staff_role) and department = 'Operations';
+
+    insert into auth_user_role(user,role)
+        select user_id,1 from sysuser where login_id = 'vuppala';
+        
+    insert into auth_user_role(user,role)
+        select user_id,2 from sysuser where login_id = 'stolz' or login_id = 'leitnerd' or login_id = 'vuppala';
+
+    insert into auth_user_role(user,role)
+        select user_id,3 from sysuser where login_id = 'wittmer' or login_id = 'leitnerd'; 
+
+    insert into auth_user_role(user,role)
+        select user_id,4 from sysuser where login_id = 'gelbke' or login_id = 'glasmach';         
+    
+    insert into auth_permission(role, operation, resource) values
+        (1,4,1), (1,5,1), (1,1,5), (1,1,6), (1,3,5), (1,3,6), (1,7,7),
+        (2,2,5), (2,6,2), 
+        (3,2,6), (3,6,3),
+        (4,7,7);
+        
+	select 'created authorization information';
+end	
+##

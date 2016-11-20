@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+
+    <p:panelGrid id="inputPanelBreakdowns"> 
+        <p:row>
+            <p:column> 
+                <p:outputLabel tabindex="11" for="brkdownBtns" value="Breakdowns:"/>
+                <p:spacer width="5"/>
+                <p:selectManyButton id="brkdownBtns" value="#{logView.breakdowns}" disabled="#{logView.canNotInputStatus()}">
+                    <c:forEach  items="#{logView.inputSnapshot.breakdowns}" var="bevent">                                                                            
+                        <f:selectItem itemLabel="#{bevent.category.name}" itemValue="#{bevent.category.name}" />                                                                                   
+                    </c:forEach>
+                </p:selectManyButton> 
+            </p:column>
+        </p:row>                            
+    </p:panelGrid>
+
+</ui:composition>

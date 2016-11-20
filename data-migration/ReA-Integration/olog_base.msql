@@ -1,0 +1,26 @@
+--
+-- Create base data: facilities, beam systems, elements etc
+--
+drop procedure if exists m2o_olog_base;
+create procedure m2o_olog_base()
+begin
+    -- Add properties (for Trouble reports etc)
+       declare HLproperty INT;
+       select 'setting up olog base data ...';
+       
+       select id into HLproperty from olog.properties where name = 'HourLog';
+       
+       if HLproperty is null then
+           insert into olog.properties(name,state) values('HourLog', 'Active'); 
+       else 
+           delete from olog.attributes where property_id = HLproperty;
+       end if;
+       
+       insert into olog.attributes(property_id,name) 
+                 select id, 'TRnumber' from olog.properties where name = 'HourLog';
+       -- insert into olog.attributes(property_id,name) 
+       --          select id, 'NotesId' from olog.properties where name = 'HourLog';
+       insert into olog.attributes(property_id,name) 
+                 select id, 'AuthorId' from olog.properties where name = 'HourLog';                 
+end	
+##

@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:cc="http://java.sun.com/jsf/composite"
+      xmlns:ui="http://java.sun.com/jsf/facelets">
+
+    <!-- INTERFACE -->
+    <cc:interface>
+        <cc:attribute name="reportItem" required="true" />
+    </cc:interface>
+
+    <cc:implementation>        
+        <p:treeTable  value="#{cc.attrs.reportItem.summaryTreeRoot}" var="node"  resizableColumns="true"  >             
+            <p:column headerText="Name">
+                <h:outputText value="#{node.name}" />
+            </p:column>
+            <p:column headerText="Description">
+                <h:outputText value="#{node.description}" />
+            </p:column>
+            <p:column headerText="Number" rendered="false" styleClass="alignRight">
+                <h:outputText value="#{node.occurrences}"  />
+            </p:column>
+            <p:column headerText="Hours" styleClass="alignRight">
+                <h:outputText value="#{node.hours}" >
+                    <f:convertNumber pattern="#,###,##0.00"/>
+                </h:outputText>
+            </p:column>
+            <p:column headerText="%" styleClass="alignRight">
+                <h:outputText value="#{node.percentage}" >
+                    <f:convertNumber pattern="#,###,##0.00"/>
+                </h:outputText>
+            </p:column>
+            <p:column headerText="Average" rendered="false">
+                <h:outputText value="#{node.occurrences == 0 ? ' ' : node.hours / node.occurrences}"  > 
+                    <f:convertNumber pattern="#,###,##0.00"/>
+                </h:outputText>
+            </p:column>
+        </p:treeTable> 
+
+    </cc:implementation>
+</html>

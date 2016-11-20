@@ -1,0 +1,39 @@
+-- 
+-- clean  data from oLog
+--
+drop procedure if exists m2o_clean_all;
+create procedure m2o_clean_all()
+begin  
+	DECLARE FoundTemp VARCHAR(128);
+    DECLARE ReaFacility INT;
+    -- SET FOREIGN_KEY_CHECKS=0;
+    
+    
+    select TABLE_NAME into FoundTemp
+    from information_schema.tables
+    where table_schema = (select database()) and table_name = 'temp_logs';
+    
+    if FoundTemp is not null then
+        select 'cleaning up olog tables ...';
+        delete from olog.logs_logbooks where log_id in (select id from temp_logs where ccf is true);
+        delete from olog.logs_attributes where log_id in (select id from temp_logs where ccf is true);
+        delete from olog.bitemporal_log where log_id in (select id from temp_logs where ccf is true);
+        delete from olog.logs where id in (select id from temp_logs where ccf is true);
+        delete from olog.entries where id in (select id from temp_entries where ccf is true);
+    end if;
+    
+    -- delete all ReA events
+    select 'cleaning up ReA events ...';
+    select facility_id into ReaFacility from facility where facility_name = 'ReA';
+    delete from beam_event where event in (select event_id from event where facility = ReaFacility);
+    delete from source_event where event in (select event_id from event where facility = ReaFacility);
+    delete from summary_event where event in (select event_id from event where facility = ReaFacility);
+    delete from breakdown_event where event in (select  event_id from event where facility = ReaFacility);
+    delete from expr_event where event in (select event_id from event where facility = ReaFacility);
+    delete from mode_event where event in (select event_id from event where facility = ReaFacility);
+    delete from vault_event where event in (select event_id from event where facility = ReaFacility);
+    delete from event where facility = ReaFacility and obsoleted_by is not null;
+    delete from event where facility = ReaFacility;
+	-- SET FOREIGN_KEY_CHECKS=1;
+end
+##

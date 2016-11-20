@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"           
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <p:panel toggleable="true" id="filterPanel"  header="Search">
+        <h:form id="filterForm">                   
+            <p:panelGrid id="filterPanel" columns="4" styleClass="centerPanel noBorders">   
+                <p:column>
+                    <p:commandButton id="fastReverseBtn" action="#{notesView.fastReverseEndDate()}"
+                                     icon="ui-icon-seek-first" title="Previous 24 Hours" update=":notesForm:notesTable  @form"/>
+                    <p:blockUI block="filterPanel" trigger="fastReverseBtn" >          
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                    </p:blockUI>
+                    <p:commandButton id="reverseBtn" action="#{notesView.reverseEndDate()}"  
+                                     icon="ui-icon-seek-prev" title="Previous 9 Hours" update=":notesForm:notesTable  @form"/> 
+                    <p:blockUI block="filterPanel" trigger="reverseBtn" >          
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                    </p:blockUI>
+                </p:column>
+                <p:column id="inf" headerText="Notes"> 
+                    
+                    <p:outputLabel for="startDt" value="Between " />        
+                    <p:calendar id="startDt"  value="#{notesView.startDate}" pages="2"  
+                                mindate="#{notesView.minDate}" maxdate="#{notesView.maxDate}"
+                                yearRange="#{msgs.calYearRange}" showButtonPanel="true"  
+                                pattern="#{msgs.calDatePattern}"  title="Format: #{msgs.calDatePattern}"
+                                navigator="true" />
+                    <p:watermark for="startDt" value=" start date" />
+                    <p:outputLabel for="endDt" value=" and " />                       
+                    <p:calendar id="endDt" value="#{notesView.endDate}" pages="2"  
+                                mindate="#{notesView.minDate}" maxdate="#{notesView.maxDate}"
+                                yearRange="#{msgs.calYearRange}" showButtonPanel="true"  
+                                pattern="#{msgs.calDatePattern}"  title="Format: #{msgs.calDatePattern}"
+                                navigator="true"/>
+                    <p:watermark for="endDt" value=" end date" />
+                    <p:outputLabel  value=" containing " />
+                    <h:inputText id="keyword" value="#{notesView.searchPhrase}" />
+                    <p:watermark for="keyword" value=" keywords" rendered="false"/>
+                    <p:outputLabel  value=" in " />
+                    <p:selectCheckboxMenu id="logbooks" value="#{notesView.selectedLogbooks}" label="logbooks"
+                                          converter="#{extLogbookConverter}"
+                                          filter="true" filterMatchMode="startsWith" panelStyle="width:250px">
+                        <f:selectItems value="#{notesView.logbooks}"  var="lb" itemLabel="#{lb.logbookName}" itemValue="#{lb}"/>
+                    </p:selectCheckboxMenu>
+                </p:column>
+                <p:column>
+                    <p:commandButton id="searchBtn" value="search" action="#{notesView.filterLog()}"  
+                                     icon="ui-icon-play" update=":notesForm:notesTable"/> 
+                    <p:blockUI block="filterPanel" trigger="searchBtn" >          
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                    </p:blockUI>
+                    <p:commandButton id="resetBtn" value="reset" process="@this"  icon="ui-icon-stop"
+                                     update=":notesForm:notesTable @form" actionListener="#{notesView.resetFilter}" 
+                                     action="#{notesView.init()}" />
+                    <p:blockUI block="filterPanel" trigger="resetBtn" >          
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                    </p:blockUI>
+                    
+                </p:column>
+                <p:column>             
+                    <p:commandButton id="forwardBtn" action="#{notesView.forwardEndDate()}"  
+                                     icon="ui-icon-seek-next" title="Next 9 Hours" update=":notesForm:notesTable  @form"/>
+                    <p:blockUI block="filterPanel" trigger="forwardBtn" >          
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                    </p:blockUI>
+                    <p:commandButton id="fastForwardBtn" action="#{notesView.fastForwardEndDate()}"  
+                                     icon="ui-icon-seek-end" title="Next 24 Hours" update=":notesForm:notesTable  @form"/>
+                    <p:blockUI block="filterPanel" trigger="fastForwardBtn" >          
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                    </p:blockUI>
+                </p:column>
+            </p:panelGrid>
+        </h:form>
+    </p:panel>
+</ui:composition>

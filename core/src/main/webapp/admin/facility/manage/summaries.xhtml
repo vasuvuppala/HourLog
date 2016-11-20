@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageSummaryForm" >
+            <h:outputText value="Note: EXN, EXR, IDT, PDT, XDT, SOF, and UOF are used in reports. You must not change their names, otherwise the reports will not be accurate."/>
+            <p:dataTable id="manageSummaryTable" value="#{manageSummaryView.summaries}" var="obj" 
+                         scrollRows="25" scrollable="true" scrollHeight="400" liveScroll="true"
+                         rowKey="#{obj.summaryId}" selectionMode="single" selection="#{manageSummaryView.selectedSummary}"                          
+                         filteredValue="#{manageSummaryView.filteredSummaries}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Summaries"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageSummaryView.onRowSelect}" update="commandButtons" />               
+                <p:column headerText="Name" sortBy="#{obj.name}" 
+                          filterBy="#{obj.name}" filterMatchMode="contains" >
+                    <h:outputText value="#{obj.name}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Description" sortBy="#{obj.description}" >
+                    <h:outputText value="#{obj.description}" />
+                </p:column> 
+                <p:column headerText="Active" sortBy="#{obj.active}" >                   
+                    <h:outputText value="#{obj.active ? 'Yes': 'No'}"/>
+                </p:column>
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="Add" icon="ui-icon-document" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageSummaryView.onAddCommand}" oncomplete="PF('objInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":objInputDlg"  process="@this"                                          
+                                             actionListener="#{manageSummaryView.onEditCommand}"
+                                             oncomplete="PF('objInputWid').show()" disabled="#{empty manageSummaryView.selectedSummary}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageSummaryView.onDeleteCommand}" oncomplete="PF('objInputWid').show()" 
+                                             disabled="#{empty manageSummaryView.selectedSummary}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="objInputDlg" widgetVar="objInputWid">
+            <h:form id="authROleInputForm">              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="New Summary" rendered="#{manageSummaryView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Summary" rendered="#{manageSummaryView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Summary" rendered="#{manageSummaryView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+                    
+                    <p:row>
+                        <p:column style="text-align: center">
+                            <p:outputLabel for="name" value="Name"/>
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="name" value="#{manageSummaryView.inputAction == 'CREATE'? manageSummaryView.inputSummary.name: manageSummaryView.selectedSummary.name}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageSummaryView.inputAction == 'DELETE'}"/>                      
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="desc"  value="Description" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="desc" value="#{manageSummaryView.inputAction == 'CREATE'? manageSummaryView.inputSummary.description : manageSummaryView.selectedSummary.description}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageSummaryView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="act"  value="Active" />
+                        </p:column>
+                        <p:column>
+                            <p:selectBooleanCheckbox id="act" value="#{manageSummaryView.inputAction == 'CREATE'? manageSummaryView.inputSummary.active : manageSummaryView.selectedSummary.active}" 
+                                         required="true" 
+                                         validatorMessage="Must specify if it is active or not" disabled="#{manageSummaryView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('objInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageSummaryView.saveSummary()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form"  update="@form :manageSummaryForm:manageSummaryTable" rendered="#{manageSummaryView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageSummaryView.deleteSummary()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form" update=":manageSummaryForm:manageSummaryTable" rendered="#{manageSummaryView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

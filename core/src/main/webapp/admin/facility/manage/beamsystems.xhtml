@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageBeamsysForm" >
+            <h:outputText value="Note: For beam-systems qualified as accelerators, charge and energy can be input by the user."/>
+            <p:dataTable id="manageBeamsysTable" value="#{manageBeamSystemView.beamsystems}" var="obj" 
+                         scrollRows="25" scrollable="true" scrollHeight="400" liveScroll="true"
+                         rowKey="#{obj.beamSystemId}" selectionMode="single" selection="#{manageBeamSystemView.selectedBeamSystem}"                          
+                         filteredValue="#{manageBeamSystemView.filteredBeamSystems}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Sources"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageBeamSystemView.onRowSelect}" update="commandButtons" />
+                <p:column headerText="Facility" sortBy="#{obj.facility.facilityName}" 
+                          filterBy="#{obj.facility.facilityName}" filterMatchMode="contains" > 
+                    <h:outputText value="#{obj.facility.facilityName}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Name" sortBy="#{obj.name}" 
+                          filterBy="#{obj.name}" filterMatchMode="contains" >
+                    <h:outputText value="#{obj.name}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Description" sortBy="#{obj.description}" >
+                    <h:outputText value="#{obj.description}" />
+                </p:column> 
+                <p:column headerText="Accelerator" sortBy="#{obj.accelerator}" >                   
+                    <h:outputText value="#{obj.accelerator ? 'Yes': 'No'}"/>
+                </p:column>
+                <p:column headerText="Active" sortBy="#{obj.active}" >                   
+                    <h:outputText value="#{obj.active ? 'Yes': 'No'}"/>
+                </p:column>
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="Add" icon="ui-icon-document" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageBeamSystemView.onAddCommand}" oncomplete="PF('objInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":objInputDlg"  process="@this"                                          
+                                             actionListener="#{manageBeamSystemView.onEditCommand}"
+                                             oncomplete="PF('objInputWid').show()" disabled="#{empty manageBeamSystemView.selectedBeamSystem}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageBeamSystemView.onDeleteCommand}" oncomplete="PF('objInputWid').show()" 
+                                             disabled="#{empty manageBeamSystemView.selectedBeamSystem}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="objInputDlg" widgetVar="objInputWid">
+            <h:form id="authROleInputForm">              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="New Beam System" rendered="#{manageBeamSystemView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Beam System" rendered="#{manageBeamSystemView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Beam System" rendered="#{manageBeamSystemView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="facility" value="Facility"/>
+                        </p:column>
+                        <p:column>
+                            <p:selectOneMenu id="facility" value="#{manageBeamSystemView.inputAction == 'CREATE'? manageBeamSystemView.inputBeamSystem.facility : manageBeamSystemView.selectedBeamSystem.facility}"  
+                                             converter="#{facilityConverter}"
+                                             disabled="#{manageBeamSystemView.inputAction == 'DELETE'}">
+                                <f:selectItems value="#{manageBeamSystemView.facilities}" var="b" itemLabel="#{b.facilityName}" itemValue="#{b}" />
+                            </p:selectOneMenu>                           
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column style="text-align: center">
+                            <p:outputLabel for="name" value="Name"/>
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="name" value="#{manageBeamSystemView.inputAction == 'CREATE'? manageBeamSystemView.inputBeamSystem.name: manageBeamSystemView.selectedBeamSystem.name}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageBeamSystemView.inputAction == 'DELETE'}"/>                      
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="desc"  value="Description" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="desc" value="#{manageBeamSystemView.inputAction == 'CREATE'? manageBeamSystemView.inputBeamSystem.description : manageBeamSystemView.selectedBeamSystem.description}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageBeamSystemView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="accl"  value="Accelerator" />
+                        </p:column>
+                        <p:column>
+                            <p:selectBooleanCheckbox id="accl" value="#{manageBeamSystemView.inputAction == 'CREATE'? manageBeamSystemView.inputBeamSystem.accelerator : manageBeamSystemView.selectedBeamSystem.accelerator}" 
+                                                     required="true" 
+                                                     validatorMessage="Must specify if it is an accelerator or not" disabled="#{manageBeamSystemView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="act"  value="Active" />
+                        </p:column>
+                        <p:column>
+                            <p:selectBooleanCheckbox id="act" value="#{manageBeamSystemView.inputAction == 'CREATE'? manageBeamSystemView.inputBeamSystem.active : manageBeamSystemView.selectedBeamSystem.active}" 
+                                                     required="true" 
+                                                     validatorMessage="Must specify if it is active or not" disabled="#{manageBeamSystemView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('objInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageBeamSystemView.saveBeamSystem()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form"  update="@form :manageBeamsysForm:manageBeamsysTable" rendered="#{manageBeamSystemView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageBeamSystemView.deleteBeamSystem()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form" update=":manageBeamsysForm:manageBeamsysTable" rendered="#{manageBeamSystemView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

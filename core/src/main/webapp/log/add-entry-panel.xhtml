@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <p:panelGrid  id="newEntry" styleClass="noBordersNP">
+        <p:row >
+            <p:column colspan="2">
+                <ui:include src="beams.xhtml" />
+            </p:column>
+            <p:column rowspan="3"> 
+                <ui:include src="buttons.xhtml" />
+            </p:column>            
+        </p:row>
+        <p:row>                          
+            <p:column rowspan="2"> 
+                <ui:include src="status.xhtml" />
+            </p:column>
+            <p:column >            
+                <p:outputPanel id="notesEditor" >                                                              
+                    <p:editor id="newacted"  rendered="#{logView.richEditor}"
+                              value="#{logView.newNote}"  height="200" width="400" 
+                              disabled="#{logView.canNotCreateLog()}"/>
+                    <p:inputTextarea tabindex="21" id="newact"  rows="#{msgs.inputLogTextRows}" cols="#{msgs.inputLogTextColumns}"  
+                                     rendered="#{!logView.richEditor}"  autoResize="true" 
+                                     value="#{logView.newNote}" 
+                                     disabled="#{logView.canNotCreateLog()}"/>
+                    <p:watermark for="newact" value="Enter notes here." />                   
+                </p:outputPanel> 
+            </p:column>
+        </p:row> 
+        <p:row>
+            <p:column>
+                <p:outputPanel id="attachments" >                 
+                    <h:outputText value="Attachments: "/>
+                    <ui:repeat var="art" value="#{logView.inputArtifacts}"> 
+                        <p:commandLink styleClass="ui-icon ui-icon-trash blueIcon iconDisplay" actionListener="#{logView.removeArtifact(art)}" 
+                                       update=":logentform:attachments" title="Remove #{art.name}"/>
+                        <h:outputText id="artid" value=" #{art.name} " />
+                        <ui:remove>
+                            <p:overlayPanel for="artid" showEvent="mouseover">                           
+                                <p:commandLink value="Remove " action="#{logView.removeArtifact(art)}"  update=":logentform:attachments"/>
+                                <h:outputText value=" #{art.name}" />
+                            </p:overlayPanel>
+                        </ui:remove>                      
+                    </ui:repeat>                  
+                </p:outputPanel>
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column colspan="2">
+                <ui:include src="breakdowns.xhtml" />
+            </p:column>
+            <p:column >
+                <p:panelGrid  styleClass="noBorders">
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="occurredAt" value="Date:" />  
+                            <p:spacer width="5"/>
+                            <p:calendar tabindex="22" id="occurredAt"  value="#{logView.occurredAt}" label="Date"
+                                        title="Format: #{msgs.calDatePattern}. If left blank, current date and time will be used"  
+                                        yearRange="#{msgs.calLogYearRange}" showButtonPanel="true" mindate="#{logView.minDate}"
+                                        pattern="#{msgs.calDatePattern}"  navigator="true" showWeek="true" 
+                                        disabled="#{logView.canNotCreateLog()}"/>
+                            <p:watermark for="occurredAt" value="Occurred At" />                              
+                        </p:column>
+                    </p:row>
+                </p:panelGrid>                
+            </p:column>
+        </p:row>
+    </p:panelGrid>
+</ui:composition>

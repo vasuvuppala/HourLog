@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+        
+        <ui:include src="log-history.xhtml" />
+        <ui:include src="edit/edit-log.xhtml" />        
+        
+        <ui:include src="new-entry.xhtml" />        
+        <ui:include src="log.xhtml" />
+        
+        <p:spacer   height="5" />
+        <ui:include src="filter.xhtml" />
+    </ui:define>       
+</ui:composition>

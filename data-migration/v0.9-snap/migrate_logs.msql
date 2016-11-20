@@ -1,0 +1,125 @@
+--
+-- Migrate log entries from logDetails, logChanges and notes from 'notes' and changedNotes' tables.
+--
+
+source migrate_notes.msql
+source migrate_events.msql
+
+--
+-- migrate events i.e. changes in facility status, breakdowns experiments, sources etc
+--
+drop procedure if exists migrate_logs;
+create procedure migrate_logs()
+begin
+	set @BASE_CHANGE_NUM = 70000;  -- Number to be added to IDs in logChanges and noteChanges.
+    set @BASE_BLANK_NOTES = 60000; -- 
+    
+    -- Temp table for converting breakdown status columns to rows
+	drop table if exists temp_brk;
+	create table temp_brk(num int, name varchar(32));
+	insert into temp_brk(num,name) values (1,'rfStatus'), (2,'vacStatus'), (3,'daqStatus'), (4,'psStatus'), (5,'ctlStatus'), (6,'utlStatus'), (7,'cryStatus'), (8,'safStatus'), (9,'othStatus'), (10,'detStatus'), (11,'magStatus'), (12,'ecrStatus'), (13,'motStatus'), (14,'dflStatus');
+    
+    -- Copy notes to a temp table
+    drop table if exists temp_notes;
+	create table temp_notes 
+      select * from HourLog.notes;
+    alter table temp_notes add unique index(id);
+    
+	-- copy all log entries to a temp table
+    -- first fix the wrong experiment numbers
+    drop table if exists temp_l1;
+    create table temp_l1 select * from HourLog.logDetails;
+    update temp_l1 set experiment_number = 322 where experiment_number = 294;
+    update temp_l1 set experiment_number = 332 where experiment_number = 3504;
+    
+    -- now copy the log entries
+	set @row := 0;
+	drop table if exists temp_log;
+	create table temp_log 
+      select l.* from temp_l1 l 
+      INNER JOIN experiment e ON l.experiment_number = e.number;	
+    alter table temp_log add column reported_at DATETIME;
+	alter table temp_log add unique index(id), add index(noteID);
+	
+    drop table temp_l1;
+    
+    -- copy all log changes to a temp table
+    select 'Calculating the reporting times for log changes ...'; 	
+    set @row := 0;
+    drop table if exists temp_c1;
+	create table temp_c1 select c.*, @row := @row + 1 as rownum 
+      from HourLog.logChanges c 
+      INNER JOIN experiment e ON c.experiment_number = e.number
+      ORDER BY c.logId DESC, c.changedDate DESC;
+	alter table temp_c1 add index(rownum), add index(logId);
+        
+    --	Add reported time and parent Note for log changes  
+    drop table if exists temp_chg;    
+    create table temp_chg 
+       select t1.*,IF(t2.changedDate is  NULL, t1.ocrDateTime, t2.changedDate) as reported_at                    
+       from temp_c1 t1 
+       LEFT JOIN temp_c1 t2 ON t1.logId = t2.logId AND t1.rownum + 1 = t2.rownum
+       INNER JOIN temp_log d ON t1.logId = d.id;               
+    alter table temp_chg add unique index(id), add index(logId), add index(noteID);
+    
+	drop table temp_c1;
+    
+    call fix_logs(@BASE_CHANGE_NUM, @BASE_BLANK_NOTES);
+    
+    -- Finally migrate. First migrate all notes, then all facility status
+    
+    call migrate_notes(@BASE_CHANGE_NUM);
+	call migrate_facility_status(@BASE_CHANGE_NUM);
+    
+	-- drop table temp_log, temp_chg, temp_brk;	
+end	
+##
+--
+-- Fix log entries and their changes: reported_at, noteID etc
+--
+drop procedure if exists fix_logs;
+create procedure fix_logs(IN base_num INTEGER, IN base_notes INTEGER)
+begin
+    -- remove changes that are invalid (dangling references)
+    delete from temp_chg where logId not in (select id from temp_log);
+    
+    -- fix the reporting times for logs 
+    select 'Fixing the reporting times for logs  ...'; 
+    update temp_log set reported_at = ocrDateTime; 
+    update temp_log l INNER JOIN
+         (select logId, max(changedDate) as reported_at from temp_chg group by logId) 
+         AS c ON l.id = c.logId
+      set l.reported_at = c.reported_at;
+      
+    -- fix log entries for which noteID is 0 but they have notes in log changes
+    select 'Fixing log entries for which noteID is 0 but they have notes in log changes ..';
+	update temp_log l
+       set noteID = (select base_num + noteID from temp_chg c 
+                   where c.logId = l.id AND c.noteID != 0 
+                   ORDER BY c.changedDate DESC LIMIT 1)
+	where l.noteID = 0;
+    
+    -- fix log entries that do not have notes at all    
+    select 'Adding auto-notes to log entries that do not have notes ....';
+    set @blank_note_id := base_notes;
+    
+    drop table if exists temp_blanks;
+    create table temp_blanks
+       select l.id as logId, @blank_note_id := @blank_note_id + 1 as noteID, 
+              'Note automatically added by Hour Log' as notes
+       from temp_log l 
+       where l.noteId = 0 ORDER BY l.id;
+    
+    insert into temp_notes(id, notes)
+       select noteID, notes from temp_blanks;    
+    update temp_log l INNER JOIN temp_blanks b ON l.id = b.logId
+       set l.noteID = b.noteID; 
+    
+    -- drop table temp_blanks    
+    
+    -- Add the parent Note ID to log changes
+    alter table temp_chg add column parentNoteID INTEGER;
+    update temp_chg c INNER JOIN temp_log l ON l.id = c.logId
+       set parentNoteID = l.noteID;
+end	
+##

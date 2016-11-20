@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                template="/template/hourlogTemplate.xhtml" >
+    <ui:define name="content" > 
+
+        <h:form id="expform">
+            <h:outputText value="#{msgs.title}: Approved Experiments" styleClass="heading"/>
+            <p:spacer height="30"/>
+            <h:outputText value="*ADate - Approval Date. CDate- Completion Date. RH - Requested Hours. AH - Approved Hours.  OTH - On Target Hours" />
+            
+            <p:dataTable id="exptab" var="exp" value="#{experimentManager.experiments}"
+                         filteredValue="#{experimentManager.filteredExperiments}"
+                         emptyMessage="No experiments! Strange. The experiment service could be down."
+                         scrollRows="25"  liveScroll="true"  scrollable="true" scrollHeight="#{msgs.experimentsScrollWindow}" >
+                <p:column headerText="Number" sortBy="#{exp.number}" filterBy="#{exp.number}">
+                    <h:outputText value="#{exp.number}"/>
+                </p:column>
+                <p:column headerText="Title"  width="15%" filterBy="#{exp.title}" filterMatchMode="contains">
+                    <h:outputText value="#{exp.title}" escape="false"/>
+                </p:column>
+                <p:column headerText="Description"  filterBy="#{exp.description}" filterMatchMode="contains" width="20%">
+                    <h:outputText value="#{exp.description}"/>
+                </p:column>
+                <p:column headerText="PAC" sortBy="#{exp.pac}" >
+                    <h:outputText value="#{exp.pac}"/>
+                </p:column>
+                <p:column  sortBy="#{exp.experimentCompleted}">
+                    <f:facet name="header" >
+                        <h:outputText value="Done?" title="Experiment Completed?"/>
+                    </f:facet>
+                    <h:outputText value="#{exp.experimentCompleted}" />
+                               
+                </p:column>
+                <p:column headerText="Date Approved"  sortBy="#{exp.approvalDate}" >
+                    <f:facet name="header">
+                        <h:outputText value="ADate"  title="Apprival Date"/>
+                    </f:facet>
+                    <h:outputText value="#{exp.approvalDate}">
+                        <f:convertDateTime pattern="dd-MMM-yyyy"/>
+                    </h:outputText>                
+                </p:column>       
+                <p:column sortBy="#{exp.completionDate}" > 
+                    <f:facet name="header">
+                        <h:outputText value="CDate"  title="Date Completied"/>
+                    </f:facet>
+                    <h:outputText value="#{exp.completionDate}">
+                        <f:convertDateTime pattern="dd-MMM-yyyy"/>
+                    </h:outputText>
+                </p:column>
+
+                <p:column sortBy="#{exp.hoursRequested}">
+                    <f:facet name="header">
+                        <h:outputText value="RH"  title="Requested Hours"/>
+                    </f:facet>
+                    <h:outputText value="#{exp.hoursRequested}"/>
+                </p:column>
+                <p:column sortBy="#{exp.hoursApproved}">
+                    <f:facet name="header">
+                        <h:outputText value="AH"  title="Approved Hours" />
+                    </f:facet>
+                    <h:outputText value="#{exp.hoursApproved}"/>
+                </p:column>
+                <p:column sortBy="#{exp.onTargetHours}">
+                    <f:facet name="header">
+                        <h:outputText value="OTH"  title="On Target Hours" />
+                    </f:facet>
+                    <h:outputText value="#{exp.onTargetHours}"/>
+                </p:column>
+                <p:column headerText="Spokeperson"  filterBy="#{exp.spokesperson}"  filterMatchMode="contains">
+                    <h:outputText value="#{exp.spokesperson}"/>
+                </p:column>
+                <p:column headerText="A1900 Contact"  filterBy="#{exp.a1900Contact}" filterMatchMode="contains">
+                    <h:outputText value="#{exp.a1900Contact}"/>
+                </p:column>
+
+                <f:facet name="footer">     
+                    <h:outputText value="Last Updated On: #{experimentManager.expService.lastServicedAt}" />
+                    <p:commandButton id="ExpRefreshBtn"  value="Refresh" icon="ui-icon-refresh"                                         
+                                     action="#{experimentManager.refreshExperiments()}" process="@this"  
+                                     title="Update the cache with latest experiments"
+                                     update=":expform:exptab" style="float: right"
+                                     disabled="#{not authView.isValidUser()}" /> 
+                    <p:blockUI block=":expform:exptab" trigger="ExpRefreshBtn" >                   
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" 
+                                        style="background-color: transparent" />                   
+                    </p:blockUI>
+                </f:facet>
+            </p:dataTable>
+        </h:form>      
+    </ui:define>       
+</ui:composition>

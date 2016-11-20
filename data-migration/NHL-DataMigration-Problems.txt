@@ -1,0 +1,61 @@
+1. Missing Experiments
+ select distinct l.experiment_number from HourLog.logDetails l where l.experiment_number not in (select exp_number from ApprovedExperiments.Experiments);
++-------------------+
+| experiment_number |
++-------------------+
+|               294 |
+|              3504 |
+|             13506 |
+|             13508 |
++-------------------+
+
+select distinct l.experiment_number from HourLog.logChanges l where l.experiment_number not in (select exp_number from ApprovedExperiments.Experiments);
++-------------------+
+| experiment_number |
++-------------------+
+|             13508 |
+|             13506 |
++-------------------+
+
+2. MIssing log entries: There are log changes with missing log entries
+ select c.logId, c.ocrDateTime, c.changedDate from HourLog.logChanges c where logId not in (select id from HourLog.logDetails);
++-------+---------------------+---------------------+
+| logId | ocrDateTime         | changedDate         |
++-------+---------------------+---------------------+
+| 12604 | 2006-02-01 13:10:00 | 2006-02-01 13:12:20 |
+| 12604 | 2006-02-01 13:10:00 | 2006-02-01 13:12:50 |
+| 12604 | 2006-02-01 13:10:00 | 2006-02-01 13:23:10 |
+| 12606 | 2006-02-01 13:13:00 | 2006-02-01 13:23:33 |
+| 12608 | 2006-02-01 13:15:00 | 2006-02-01 13:23:47 |
+| 12610 | 2006-02-01 13:19:00 | 2006-02-01 13:23:59 |
+| 12604 | 2006-02-01 13:10:00 | 2006-02-01 13:36:09 |
+| 12606 | 2006-02-01 13:13:00 | 2006-02-01 13:36:17 |
+| 12608 | 2006-02-01 13:15:00 | 2006-02-01 13:36:24 |
+| 12610 | 2006-02-01 13:19:00 | 2006-02-01 13:36:32 |
+| 13018 | 2006-03-04 10:46:00 | 2006-03-04 10:50:14 |
++-------+---------------------+---------------------+
+
+3. Invalid Staff IDs
+select distinct peopleID from HourLog.peopleShift where peopleID not in (select id from HourLog.people);
++----------+
+| peopleID |
++----------+
+|       16 |
+|       14 |
+|       13 |
+|       28 |
+|       43 |
+|        0 |
++----------+
+
+4. Attachments for logs with missing experiment numbers
+ select d.docId 'Attachments for logs with missing experiment numbers'          
+ from HourLog.docs d          
+ where d.logId in 
+    (select id from HourLog.logDetails where experiment_number not in            
+      (select exp_number from ApprovedExperiments.Experiments));
++------------------------------------------------------+
+| Attachments for logs with missing experiment numbers |
++------------------------------------------------------+
+|                                                 7929 |
++------------------------------------------------------+

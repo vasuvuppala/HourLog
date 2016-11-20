@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"             
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:fc="http://java.sun.com/jsf/composite/comps"
+                xmlns:h="http://java.sun.com/jsf/html" >
+
+    <h:form id="StatusRepResults">
+        <h:outputText value="#{msgs.title}: Summary Report" styleClass="heading"/>
+        
+        <h:outputText value="No data was found for this report" rendered="#{empty summaryReportView.dataTotals}"/>
+        
+        <p:panel id="statusResult" toggleable="true" closable="true" rendered="#{not empty summaryReportView.dataTotals}" >
+            <f:facet name="header">
+                <h:outputText value="Hour Log Report For #{summaryReportView.selectedFacility.description} From " />
+                <h:outputText value="#{summaryReportView.reportStartDate}" >
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+                <h:outputText value=" To " />
+                <h:outputText value="#{summaryReportView.reportEndDate}" >
+                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+            </f:facet>
+            <f:facet name="footer"> 
+                <h:outputText value="Generated on " />
+                <h:outputText value="#{summaryReportView.reportDate}"> 
+                    <f:convertDateTime pattern="#{msgs.dateFormatLong}"/>
+                </h:outputText>
+                <p:commandButton value="Print" type="button" icon="ui-icon-print"  style="float: right;" >
+                    <p:printer target="statusResult" />
+                </p:commandButton>
+            </f:facet>
+
+            <fc:experiment-report reportItem="#{summaryReportView.dataTotals}"  expItems="#{summaryReportView.experimentReportItems}"
+                                  barModel="#{summaryReportView.barModel}" pieModel="#{summaryReportView.pieModel}"
+                                  export="true"/>            
+              
+            <ui:repeat value="#{summaryReportView.experimentReportItems}" var="expr">
+                <p:panel  id="exprResult"  toggleable="true" closable="true" >
+                    <f:facet name="header">
+                        <h:outputText value="Hour Log Report For #{expr.experiment.number}-#{expr.experiment.spokesperson} From "/>
+                        <h:outputText value="#{summaryReportView.reportStartDate}" >
+                            <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                        </h:outputText>
+                        <h:outputText value=" To " />
+                        <h:outputText value="#{summaryReportView.reportEndDate}" >
+                            <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                        </h:outputText>
+                    </f:facet>
+                    <f:facet name="footer"> 
+                        <h:outputText value="Generated on " />
+                        <h:outputText value="#{summaryReportView.reportDate}"> 
+                            <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                        </h:outputText>
+                        <p:commandButton value="Print" type="button" icon="ui-icon-print"  style="float: right;" >
+                            <p:printer target="exprResult" />
+                        </p:commandButton>
+                    </f:facet>
+                    <fc:experiment-report reportItem="#{expr}" />               
+                </p:panel>
+
+            </ui:repeat>
+        </p:panel>
+    </h:form>
+</ui:composition>

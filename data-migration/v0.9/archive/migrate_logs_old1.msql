@@ -1,0 +1,86 @@
+--
+-- Migrate log entries from logDetails, logChanges and related tables
+--
+
+source migrate_notes.msql
+source migrate_events.msql
+
+--
+-- migrate events i.e. changes in facility status, breakdowns experiments, sources etc
+--
+drop procedure if exists migrate_events;
+create procedure migrate_events(IN base_num INTEGER)
+begin
+	
+	-- copy all log entries to a temp table
+	set @row := 0;
+	drop table if exists temp_log;
+	create table temp_log 
+      select l.* from HourLog.logDetails l 
+      INNER JOIN experiment e ON l.experiment_number = e.number;	
+    alter table temp_log add column reported_at DATETIME;
+	alter table temp_log add unique index(id);
+	
+	-- fix log entries for which noteID is 0 but they have notes in log changes
+    select 'fixing log entries for which noteID is 0 but they have notes in log changes ..';
+	update temp_log e
+       set noteID = (select base_num + noteID from HourLog.logChanges l 
+                   where l.logId = e.id AND l.noteID != 0 
+                   ORDER BY l.changedDate DESC LIMIT 1)
+	where e.noteID = 0;
+	
+    -- fix the reporting times for logs that have edits
+    select 'fixing the reporting times for logs that have edits ...' 
+    drop table if exists temp_reptime;
+    create table temp_reptime select logId, max(changedDate) as reported_at from HourLog.logChanges group by logId;
+    alter table temp_reptime add index(logId);
+    update temp_log l LEFT JOIN temp_reptime r ON l.id = r.logId
+       set l.reported_at = r.reported_at;
+	drop table temp_reptime;
+    
+    -- fix log entries that do not have notes at all
+    set @blank_note_ := 0;
+    
+    -- Temp table for calculating reported time for log changes
+	drop table if exists temp_c1;
+    set @row := 0;
+	create table temp_c1 select c.*, @row := @row + 1 as rownum 
+      from HourLog.logChanges c 
+      INNER JOIN experiment e ON c.experiment_number = e.number
+      ORDER BY c.logId DESC, c.changedDate DESC;
+	-- update temp_c1 set id = id + @BASE_CHANGE_NUM;
+	alter table temp_c1 add index(rownum), add index(logId);
+        
+    --	Copy log changes to a temp table, and fix reported time  
+    drop table if exists temp_chg;    
+    create table temp_chg 
+       select t1.*,IF(t2.changedDate is  NULL, t1.ocrDateTime, t2.changedDate) as reported_at, 
+             d.noteID as parentNoteID         
+       from temp_c1 t1 
+       LEFT JOIN temp_c1 t2 ON t1.logId = t2.logId AND t1.rownum + 1 = t2.rownum         
+       INNER JOIN temp_log d ON t1.logId = d.id;
+    
+	drop table temp_c1;
+    
+	-- for converting breakdown status columns to rows
+	drop table if exists temp_brk;
+	create table temp_brk(num int, name varchar(32));
+	insert into temp_brk(num,name) values (1,'rfStatus'), (2,'vacStatus'), (3,'daqStatus'), (4,'psStatus'), (5,'ctlStatus'), (6,'utlStatus'), (7,'cryStatus'), (8,'safStatus'), (9,'othStatus'), (10,'detStatus'), (11,'magStatus'), (12,'ecrStatus'), (13,'motStatus'), (14,'dflStatus');
+	
+    --- First migrate all notes, then all facility status
+    call migrate_notes(base_num);
+	call migrate_facility_status(base_num);
+    
+	-- drop table temp_log, temp_chg, temp_brk;
+	
+	select 'Events without log entry = ', count(*) from event where note is null;	
+	select 'Migrated', count(*), 'facility status events' from facility_status_event;
+	select 'Migrated', count(*), 'source events'  from source_event;
+	select 'Migrated', count(*), 'vault events' from vault_event;
+	select 'Migrated', count(*), 'experiment events' from expr_event;
+	select 'Migrated', count(*), 'mode events'  from mode_event;
+	select 'Migrated', count(*), 'beam events'  from beam_event;
+	select 'Migrated', count(*), 'breakdown events'  from breakdown_event;
+	
+end	
+##

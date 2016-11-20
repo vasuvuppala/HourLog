@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                template="/template/hourlogTemplate.xhtml" >
+    <ui:define name="content" > 
+        <h:outputText value="You must be logged in to see users." rendered="#{empty userSession.user}" />
+        <h:form id="expform" rendered="#{not empty userSession.user}" >
+            <h:outputText value="#{msgs.title}: Users" styleClass="heading"/>
+            <p:spacer height="10"/>
+            
+            <p:dataTable id="usersTable" var="user" value="#{userView.users}"
+                         filteredValue="#{userView.filteredUsers}" sortMode="multiple"
+                         emptyMessage="No users! Strange."
+                         scrollRows="25"  liveScroll="true"  scrollable="true" scrollHeight="#{msgs.experimentsScrollWindow}" >
+                <p:column headerText="Number" sortBy="#{user.userId}" 
+                          filterBy="#{user.userId}" width="8%">
+                    <h:outputText value="#{user.userId}"/>
+                </p:column>
+                <p:column headerText="ID"  filterBy="#{user.loginId}" 
+                          filterMatchMode="contains" width="8%">
+                    <h:outputText value="#{user.loginId}"/>
+                </p:column>
+                <p:column headerText="Last Name" sortBy="#{user.lastName}" 
+                          filterBy="#{user.lastName}" filterMatchMode="contains" >
+                    <h:outputText value="#{user.lastName}"/>
+                </p:column>
+                <p:column headerText="First Name" sortBy="#{user.firstName}" 
+                          filterBy="#{user.firstName}" filterMatchMode="contains" >
+                    <h:outputText value="#{user.firstName}"/>
+                </p:column>
+                <p:column headerText="Email"  width="15%">
+                    <h:outputText value="#{user.email}" />
+                </p:column>
+                <p:column headerText="SMS" width="15%">
+                    <h:outputText value="#{user.smsAddress}" />
+                </p:column>
+                <p:column headerText="Current Employee" sortBy="#{user.currentEmployee}" width="5%" >
+                    <p:selectBooleanCheckbox value="#{user.currentEmployee}" disabled="true"/>                    
+                </p:column>              
+            </p:dataTable>
+        </h:form>      
+    </ui:define>       
+</ui:composition>

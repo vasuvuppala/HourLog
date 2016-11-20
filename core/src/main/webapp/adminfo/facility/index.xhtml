@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+        
+        <h:outputText value="#{msgs.title} Facility Data" styleClass="heading"/>
+        <p:panelGrid columns="3" styleClass="noBorders">          
+            <ui:include src="facbeams.xhtml"/>
+            <ui:include src="beamsystems.xhtml"/> 
+            <ui:include src="breakdowns.xhtml"/>
+            
+            <ui:include src="elements.xhtml"/>
+            <ui:include src="facilities.xhtml"/>   
+            <ui:include src="logbooks.xhtml"/>
+            
+            <ui:include src="modes.xhtml"/>
+            <ui:include src="source.xhtml"/>
+            <ui:include src="summaries.xhtml"/>
+            
+            <ui:include src="vaults.xhtml"/>
+        </p:panelGrid>
+    </ui:define>       
+</ui:composition>

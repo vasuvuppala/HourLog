@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageVaultForm" >
+            <p:dataTable id="manageVaultTable" value="#{manageVaultView.vaults}" var="obj" 
+                         scrollRows="25" scrollable="true" scrollHeight="400" liveScroll="true"
+                         rowKey="#{obj.vaultId}" selectionMode="single" selection="#{manageVaultView.selectedVault}"                          
+                         filteredValue="#{manageVaultView.filteredVaults}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Vaults"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageVaultView.onRowSelect}" update="commandButtons" />  
+                <p:column headerText="Facility" sortBy="#{obj.facility.facilityName}" 
+                          filterBy="#{obj.facility.facilityName}" filterMatchMode="contains" > 
+                    <h:outputText value="#{obj.facility.facilityName}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Name" sortBy="#{obj.name}" 
+                          filterBy="#{obj.name}" filterMatchMode="contains" >
+                    <h:outputText value="#{obj.name}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Description" sortBy="#{obj.description}" >
+                    <h:outputText value="#{obj.description}" />
+                </p:column>
+                <p:column headerText="Active" sortBy="#{obj.active}" >                   
+                    <h:outputText value="#{obj.active ? 'Yes': 'No'}"/>
+                </p:column>
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="Add" icon="ui-icon-document" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageVaultView.onAddCommand}" oncomplete="PF('objInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":objInputDlg"  process="@this"                                          
+                                             actionListener="#{manageVaultView.onEditCommand}"
+                                             oncomplete="PF('objInputWid').show()" disabled="#{empty manageVaultView.selectedVault}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":objInputDlg" process="@this" 
+                                             actionListener="#{manageVaultView.onDeleteCommand}" oncomplete="PF('objInputWid').show()" 
+                                             disabled="#{empty manageVaultView.selectedVault}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="objInputDlg" widgetVar="objInputWid">
+            <h:form id="authROleInputForm">              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="New Vault" rendered="#{manageVaultView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Vault" rendered="#{manageVaultView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Vault" rendered="#{manageVaultView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="facility" value="Facility"/>
+                        </p:column>
+                        <p:column>
+                            <p:selectOneMenu id="facility" value="#{manageVaultView.inputAction == 'CREATE'? manageVaultView.inputVault.facility : manageVaultView.selectedVault.facility}"  
+                                             converter="#{facilityConverter}"
+                                             disabled="#{manageVaultView.inputAction == 'DELETE'}">
+                                <f:selectItems value="#{manageVaultView.facilities}" var="b" itemLabel="#{b.facilityName}" itemValue="#{b}" />
+                            </p:selectOneMenu>                           
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column style="text-align: center">
+                            <p:outputLabel for="name" value="Name"/>
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="name" value="#{manageVaultView.inputAction == 'CREATE'? manageVaultView.inputVault.name: manageVaultView.selectedVault.name}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageVaultView.inputAction == 'DELETE'}"/>                      
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="desc"  value="Description" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="desc" value="#{manageVaultView.inputAction == 'CREATE'? manageVaultView.inputVault.description : manageVaultView.selectedVault.description}" 
+                                         required="true" 
+                                         validatorMessage="Description required" disabled="#{manageVaultView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="act"  value="Active" />
+                        </p:column>
+                        <p:column>
+                            <p:selectBooleanCheckbox id="act" value="#{manageVaultView.inputAction == 'CREATE'? manageVaultView.inputVault.active : manageVaultView.selectedVault.active}" 
+                                                     required="true" 
+                                                     validatorMessage="Must specify if it is active or not" disabled="#{manageVaultView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('objInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageVaultView.saveVault()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form"  update="@form :manageVaultForm:manageVaultTable" rendered="#{manageVaultView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageVaultView.deleteVault()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('objInputWid').hide()"
+                                                 process="@form" update=":manageVaultForm:manageVaultTable" rendered="#{manageVaultView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

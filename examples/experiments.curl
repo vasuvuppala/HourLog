@@ -1,0 +1,3 @@
+#!/bin/bash
+curl -v -k -L -H "Accept: application/json" --data "api_key=a426e39ee891ee71d365df165f6ce474&api_application=elog"  https://enterprise.nscl.msu.edu/api/experiments/ | python -m json.tool
+curl -v -k -L -H "Accept: application/json" --data "api_key=a426e39ee891ee71d365df165f6ce474&api_application=elog&ModifiedAfter=2014-10-01"  https://enterprise.nscl.msu.edu/api/experiments/ | python -m json.tool

@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--
+    Switch to another facility
+
+    @author: Vasu V
+-->
+<ui:composition 
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:f="http://java.sun.com/jsf/core"
+    xmlns:p="http://primefaces.org/ui"
+    xmlns:h="http://java.sun.com/jsf/html">
+
+    <p:dialog id="switchFacility"  header="Switch Facility" widgetVar="switchFacilityWid"  resizable="false" > 
+        <h:form>
+            <p:panelGrid id="facilityInputPanel" styleClass="noBorders">
+                <p:row>
+                    <p:column>
+                        <h:outputText value="Facility: " />    
+                    </p:column>
+                    <p:column>
+                        <p:selectOneRadio id="facInput" value="#{facilitySwitchView.newFacility}" converter="#{facilityConverter}" >
+                            <f:selectItems value="#{facilitySwitchView.facilities}" var="faci" itemLabel="#{faci.facilityName}" itemValue="#{faci}"/>
+                        </p:selectOneRadio>
+                    </p:column>
+                </p:row>
+
+                <p:row>
+                    <p:column colspan="2">
+                        <p:separator/>
+                    </p:column>
+                </p:row>
+
+                <p:row>
+                    <p:column>
+                        <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                         onclick="PF('switchFacilityWid').hide()"/>
+                    </p:column>
+                    <p:column>
+                        <p:commandButton id="switchFacButton" icon="ui-icon-disk" value="Switch" style="float: right;"
+                                         action="#{facilitySwitchView.switchFacility()}"  
+                                         oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('switchFacilityWid').hide()"
+                                         process="@form" />
+                        <p:blockUI block="facilityInputPanel" trigger="switchFacButton" >
+                            <h:outputText  value="Swithicng.."/>
+                            <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                        </p:blockUI>
+                    </p:column>
+                </p:row>
+            </p:panelGrid>
+        </h:form>
+    </p:dialog>
+</ui:composition>

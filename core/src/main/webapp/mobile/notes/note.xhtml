@@ -1,0 +1,92 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:pm="http://primefaces.org/mobile"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+    <f:view renderKitId="PRIMEFACES_MOBILE">
+        <h:head></h:head>
+        <h:body>
+            <pm:page id="customerListing">
+                <pm:header>
+                    Hour Log
+                </pm:header>
+                <pm:content>
+                    <h:form id="notesForm"> 
+                        <p:poll interval="#{msgs.refreshRate}" update="notesTable"  rendered="false"/>
+                        <p:dataTable id="notesTable" var="logent" value="#{notesView.lazyLog}"   
+                                     liveScroll="false" scrollRows="#{msgs.logsScrollRows}" scrollable="false" scrollHeight="#{msgs.logsScrollWindow}"                 
+                                     paginator="true" rows="#{msgs.logsScrollRows}"
+                                     paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     lazy="true" > 
+
+                            <p:column headerText="Date" width="10%" >
+                                <h:outputText value="#{logent.logEntry.logEntryId}" rendered="false"/>               
+
+                                <h:outputText value="#{logent.logEntry.occurredAt}">
+                                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="HH:mm"/>
+                                </h:outputText> 
+
+                                <h:outputText value="#{logent.logEntry.occurredAt}" >
+                                    <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormat}"/>
+                                </h:outputText>
+
+                            </p:column>
+                            <p:column headerText="Author" width="10%">
+                                <h:outputText value="#{logent.logEntry.sysuser.firstName} #{logent.logEntry.sysuser.lastName}"/> 
+                            </p:column>
+                            <p:column headerText="Logbook" width="10%">
+                                <h:outputText value="#{logent.logEntry.logbook.logbookName}"/> 
+                            </p:column>
+                            <p:column headerText="Notes" >
+                                <h:outputText value="#{logent.logEntry.logText}" escape="false"/>
+                                <p:panel  rendered="#{not empty logent.logEntry.artifactList}" styleClass="eventInfo" >
+                                    <h:outputText value="Attachments: " styleClass="newEventTitle"/> 
+                                    <ui:repeat var="art" value="#{logent.logEntry.artifactList}" >                      
+                                        <h:outputLink value="#{appProperties.TR_URL}/#{art.resourceId}"   
+                                                      target="_blank" rendered="#{false and art.type == 't'}"  >                       
+                                            <h:outputText value="#{art.name}"/>                      
+                                        </h:outputLink>  
+                                        <p:link href="#{appProperties.TR_URL}/#{art.resourceId}" value=" #{art.name}"  
+                                                target="_blank" rendered="#{art.type == 't'}" />                      
+                                        <p:commandLink id="troubleRep" value="#{art.name}"   
+                                                       action="#{troubleReportsView.findTroubleReport(art.resourceId)}" oncomplete="PF('TRoverlayWid').show()"
+                                                       update=":TRoverlay" rendered="#{false and art.type == 't'}"/>
+
+                                        <p:commandLink  ajax="false"  value=" #{art.name}"                                       
+                                                        rendered="#{art.type == 'd'}">                            
+                                            <f:setPropertyActionListener target="#{notesView.downloadArtifact}" value="#{art}" />
+                                            <p:fileDownload value="#{notesView.downloadedFile}" />  
+                                        </p:commandLink>
+                                        <h:outputText styleClass="ui-icon ui-icon-arrow-1-s" style="display: inline-block;"/>
+                                    </ui:repeat> 
+                                </p:panel>
+                                <p:panel styleClass="eventInfo" rendered="#{not empty logent.event.beamEventList}">                
+                                    <h:outputText value="Beams  " styleClass="newEventTitle"/>
+                                    <ui:repeat var="bevent" value="#{logent.event.beamEventList}" >                              
+                                        <h:outputText value=" #{bevent.beamSystem.name}: " />
+                                        <h:outputText value=" &lt;SUP&gt;#{bevent.beam.massNumber}&lt;/SUP&gt; #{bevent.beam.element.symbol} &lt;SUP&gt;#{bevent.beam.charge}&lt;/SUP&gt;-#{bevent.beam.energy} " 
+                                                      rendered="#{not empty bevent.beam}" styleClass="newEvent" escape="false"/>                                                                                                                       
+                                        <h:outputText value=" &lt;SUP&gt;#{bevent.massNumber}&lt;/SUP&gt; #{bevent.element.symbol}  " 
+                                                      rendered="#{empty bevent.beam and not empty bevent.massNumber}" styleClass="newEvent" escape="false"/>   
+                                        <h:outputText value=" None " 
+                                                      rendered="#{empty bevent.beam and empty bevent.massNumber}" styleClass="newEvent" />
+                                    </ui:repeat>
+                                </p:panel>
+                                <p:panel styleClass="eventInfo" rendered="#{not empty logent.event.exprEventList}">                
+                                    <h:outputText value="Experiment: " styleClass="newEventTitle"/>
+                                    <h:outputText value="#{logent.snapshot.experiment.spokesperson}-#{logent.snapshot.experiment.title}" styleClass="newEvent"/>                  
+                                </p:panel>
+                            </p:column>     
+                        </p:dataTable> 
+                    </h:form> 
+                </pm:content>
+                <pm:footer>
+                    FRIB
+                </pm:footer>
+            </pm:page>
+
+        </h:body>
+    </f:view>
+</html>

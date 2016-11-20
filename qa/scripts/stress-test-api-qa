@@ -1,0 +1,25 @@
+#!/bin/bash
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:`pwd`
+LOGFILE=/tmp/hl-stress-test-qa.log
+#LOGFILE=/dev/stdout
+base="http://qa01-hlc.nscl.msu.edu:8080/hourlog/api/rest/v0.1.0"
+urls="$base/reports/summary $base/events?facility=CCF&from=2014-01-01  $base/notes?facility=CCF&from=2014-01-01"
+#urls="$base/events?facility=CCF&from=2014-01-01  $base/notes?facility=CCF&from=2014-01-01"
+#urls="$base/reports/summary"
+#urls="$base/notes?facility=CCF&from=2014-01-01"
+#urls="$base/events?facility=CCF&from=2014-01-01"
+
+date > $LOGFILE
+let i=0
+while (true); do
+   echo "iteration: $i" > $LOGFILE
+   for url in $urls; do
+      api-test.curl $url >> $LOGFILE 2>&1
+      #api-test.curl $url 
+   done
+   let i++ 
+   #sleep 1
+done
+
+

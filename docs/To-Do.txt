@@ -1,0 +1,146 @@
+ 
+Bugs:            
+     reports brkdown category selection     
+     'next 9/24 hour' buttons do not get disabled at the ends 
+     Reports for ReA
+     In Notes page, logbook select is not preserved  
+     
+To Do:
+
+  Refactor reports
+   - 
+   - reportView.java : provide common items such as years, months, weeks, report types etc. remove them from 
+           summaryReportView.java and BrkdownReportView.java  
+   - entering dates: remove 'close'           
+   
+  Update exceptions to log to logger: 
+      logger.logger(Level.SEVERE, "some context message", e );
+      Remove System.out(e);
+      Change catch(Exception e)
+  
+  Put authorizations in EJBs
+  TR refresh should be only for operations staff
+  Is facility needed in Experiment Report?
+  Revisit Authorization: 
+     Auth from intra-gw
+     Add auth for Experiment report (/report/experiment/?number...)
+  
+  replace edit entry popup with new entry panel
+  HourLogStatus: Singleton or ApplicationScope?
+  TR API to be fixed.
+  Replace BlobStore with TempStore
+  
+  Update Readme.text with Features etc, and License.txt
+  App properties in JNDI/DB  
+  Remove ClientReponseLoggingFilter.java
+  remove LogEntryEJB.java
+  replace hourlogsingleton.java with application scope bean
+  handle users who are in AD but not in hour log users db
+  API: send data only when changed
+     
+  Facility:
+    - add facility to snapshots (snapshotEJB)
+  Logging: 
+    - enable appwide debugging
+    - improving logging    
+   Remove breakdown_status table 
+   Comment the code
+   Remove LogEntryEJB
+   
+   Except for breakdowns and beams, other subevents have 1-to-1 relationship with event.
+   Separate out addNewEntry and addnewEntrywithStatus.  
+   Check and Remove notes.xhtml (not being used)  
+   Check MyFileUploadRendered.java
+   
+   Convert REST methods to Asynchronous 
+    
+Todo Development:
+   Junit
+   Piwik web analysis s/w   
+   Jenkins
+   sonarqube
+   
+   
+Done:
+Concurrency control during log editing
+Background on beams/attachments panel in 'notes' column should be transparent.
+change facility
+add dummy records for logChanges with logDetails  missing 
+In Production:
+ change DB to production hourlog!!!
+     set deployment_environment to production
+     set BlobStore directory properly
+        - move migrated pictures    
+     Move training records 
+     Put HTTPS restriction back in web.xml
+     modify /api/rest in web.xml and HourLogService.java
+     Training/TR service app properties from JNDI: enable 
+     Check cache update schedule
+     Remove temp tables from database
+     disable 8080 and 8181
+controlsapp1:
+      setup /srv/hourlog/BlobStore, 
+      fdbdba password
+      nsclcacert.pem
+      hourlog db on controlsdb
+      turnoff 8080/8181 ports
+      add controls account, change password for admin
+      
+    WARNING:   snapshotEJB: cannot determine beam at given instance (empty database). Adding an empty even 
+    develop signal mgmt screen and a check in log
+    Move p:messages to template
+    shift information should show up for auto-generated log entry
+     base data gets deleted!!
+    TR link not working 
+    remove link between logbook and facility. add name of logbook in facility. 
+    BreakdownCategory key should be Short not Int.
+    change history dialog effect to click
+    remove link between logbook and facility. add name of logbook in facility. 
+    BreakdownCategory key should be Short not Int.
+    in history, changes to log text are not highlighted
+    on mobile, log/notes pages have space on right 
+    summary reports for periods wrong
+    when editing a log entry, cancelling out keeps the attachments (on the page)
+    Date format in Notes page
+    facility admin
+    Session timeouts 
+    Check 403 code from experiment service
+    When editing/adding no growl messages appear
+    During adding and editing backdating is denied for even managers.
+    Time display in log history   
+     table sorting in reports
+     Fix Beam Charge in API
+     Fix author in log_entry
+        - Add user id to log_entry  
+     Cache
+        - Change guillibleRestClient in cache syncs to skeptical one
+        - Add cache expiration date
+        - check schedule is fine
+        - refactor cache service status (hourlog singleton)
+
+     Editing of artifacts
+        - add artifact name
+     Input validation: 
+        - blank note, anything changed
+        - artifacts changed
+     Fix new shift link
+     Plain text to rich text loses data
+     Log entry input validation
+     LazyLogModel: set rowcount to the right number of results
+     Switching notes editor midway does not retain the note
+
+    'None' option for Beams 
+    shift change line
+    user admin
+    shift page refresh
+    log page refresh
+    move login into menubar
+    plain/rich editor as icon only
+    lock status inputs
+    fix login (cancel button)
+    shifts for different facilities
+    sms notifications?
+    experimenter in-charge: should it be with shift?
+    Facilities:
+         - different breakdowns
+         - different 

@@ -1,0 +1,178 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:fc="http://java.sun.com/jsf/composite/comps"
+                xmlns:f="http://java.sun.com/jsf/core">
+    <h:form  >        
+        <p:menubar autoDisplay="false">
+            <p:menuitem value="Home"  url="/" icon="ui-icon-home " />
+            <p:menuitem value="Log"  url="log.xhtml" icon="ui-icon-document"  rendered="false"/>
+
+            <p:menuitem value="Notes"  url="/notes/index.xhtml" 
+                        target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" 
+                        icon="ui-icon-comment " />
+
+            <p:menuitem value="Shift"  url="/shift/index.xhtml"  target="_blank"  title="Update SHift Information"
+                        icon="ui-icon-transfer-e-w" disabled="#{not authView.canOperateShift() or view.viewId == msgs.shiftViewID}" />
+
+            <p:menuitem value="Reports"  url="/report/index.xhtml" target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" 
+                        icon="ui-icon-script " disabled="#{not authView.canGenerateReports()}"/>
+            <p:menuitem value="Events"  url="events.xhtml" icon="ui-icon-tag "  disabled="true"  rendered="false"/> 
+            
+            <p:menuitem value="Facility" id="switchFacility" icon="ui-icon-extlink"  immediate="true"
+                        title="Switch to a different facility"  onclick="PF('switchFacilityWid').show()"/> 
+
+            <p:submenu label="Cache" icon="ui-icon-suitcase" >
+                <p:menuitem value="Experiments"  url="/cache/experiments.xhtml" 
+                            icon="ui-icon-calendar" target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" />
+                <p:menuitem value="Trainings"  url="/cache/trainings.xhtml"
+                            icon="ui-icon-star" target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" />
+                <p:menuitem value="Trouble Reports"  url="/cache/tr.xhtml" 
+                            icon="ui-icon-flag" target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" />
+                <p:menuitem value="Users"  url="/cache/users.xhtml" rendered="false"
+                            icon="ui-icon-person" target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" />
+            </p:submenu>
+            
+            <p:submenu label="Links" icon="ui-icon-bookmark" >
+                <p:menuitem value=" 911 Log" url="#{msgs.Log911}" title="911 Log" 
+                            icon="ui-icon-link" target="_blank" />  
+                <p:menuitem value=" Beam Current Log" icon="ui-icon-link"  rendered="false"
+                            title="Beam Current Log"  url="#{msgs.BeamCurrentLog}" disabled="true"
+                            target="_blank"/>             
+                <p:menuitem value=" Data U Display" title="Data U Display" 
+                            icon="ui-icon-link" target="_blank" 
+                            url="#{msgs.DataUDisplay}" />                      
+                <p:menuitem value=" Interruption Comp" title="Interruption Compenstation"  rendered="false"
+                            icon="ui-icon-link" url="#{msgs.InterruptionComp}" disabled="true"
+                            target="_blank" />
+                <p:menuitem value=" Message 2 Exp" icon="ui-icon-link" 
+                            title="Message To Experimenters"  target="_blank"
+                            url="#{msgs.Message2Expr}" rendered="false"/>                            
+                <p:menuitem value=" Plasma Screen" url="#{msgs.PlasmaScreen}" 
+                            icon="ui-icon-link" 
+                            title="Plasma Screen"  target="_blank"/>
+                <p:menuitem value=" Short Term Schedule" url="#{msgs.ShortTermSched}" 
+                            icon="ui-icon-link" 
+                            title="Short Term Schedule" target="_blank" />
+                <p:menuitem value=" Test Hour Log" url="#{msgs.TestHourLog}" 
+                            icon="ui-icon-link" 
+                            title="Hour Log QA Instance" target="_blank" />
+            </p:submenu>  
+           
+            <p:menuitem value="Preferences"  url="/prefs/" icon="ui-icon-gear " 
+                        target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" 
+                        disabled="#{not authView.isValidUser()}"/> 
+
+            <p:submenu label="Admin" icon="ui-icon-document" rendered="#{authView.isValidUser()}">
+                <p:menuitem value="Authorizations"  url="/adminfo/auth/index.xhtml" icon="ui-icon-person " 
+                            target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" 
+                            disabled="#{not authView.isValidUser()}"/>
+
+                <p:submenu label="Manage Auth" icon="ui-icon-gear" >
+                    <p:menuitem value="Permissions" title="Manage Permissions" icon="ui-icon-tag" 
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/auth/manage/auth-permissions.xhtml" disabled="#{not authView.canManageFacility()}"/> 
+                    <p:menuitem value="Resources" icon="ui-icon-tag" title="Manage Resources"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/auth/manage/auth-resources.xhtml" disabled="#{not authView.canManageFacility()}"/>                    
+                    <p:menuitem value="Roles" url="/admin/auth/manage/auth-roles.xhtml" title="Manage Roles" 
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                icon="ui-icon-tag" disabled="#{not authView.canManageFacility()}"/> 
+                    <p:menuitem value="Users" title="Manage Users" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/auth/manage/auth-users.xhtml" disabled="#{not authView.canManageFacility()}"/> 
+                    <p:menuitem value="User Roles" title="Manage User Roles" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/auth/manage/auth-user-roles.xhtml" disabled="#{not authView.canManageFacility()}"/>                                                                                   
+                </p:submenu> 
+
+                <p:menuitem value="Facility"  url="/adminfo/facility/index.xhtml" icon="ui-icon-lightbulb " 
+                            target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" 
+                            disabled="#{not authView.isValidUser()}"/>              
+                <p:submenu label="Manage Facility" icon="ui-icon-gear" >
+                    <p:menuitem value="Beams" title="Manage Beams" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/beams.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Beam Systems" title="Manage Beams Systems" icon="ui-icon-tag" 
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/beamsystems.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Breakdowns" title="Manage Breakdown Categories" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/brkcats.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Elements" title="Manage Elements" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/elements.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Facilities" title="Manage Facilities" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/facilities.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Logbooks" title="Manage Logbooks" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/logbooks.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Modes" title="Manage Modes" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/modes.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Signals" title="Manage Signals" icon="ui-icon-tag"  rendered="false"
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/signals.xhtml" disabled="#{not authView.canManageFacility()}"/> 
+                    <p:menuitem value="Sources" title="Manage Sources" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/sources.xhtml" disabled="#{not authView.canManageFacility()}"/>                    
+                    <p:menuitem value="Summaries" title="Manage Summaries" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/summaries.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Vaults" title="Manage Vaults" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/facility/manage/vaults.xhtml" disabled="#{not authView.canManageFacility()}"/>                   
+                </p:submenu> 
+
+                <p:menuitem value="Staff"  url="/adminfo/shift/index.xhtml" icon="ui-icon-transfer-e-w" 
+                            target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" 
+                            disabled="#{not authView.isValidUser()}"/>              
+                <p:submenu label="Manage Staff" icon="ui-icon-gear" >
+                    <p:menuitem value="Operation Roles" title="Manage Operation Roles" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/shift/manage/oproles.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Shift Status" title="Manage Shift Status" icon="ui-icon-tag"  
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/shift/manage/shiftstatus.xhtml" disabled="#{not authView.canManageFacility()}"/>
+                    <p:menuitem value="Staff Roles" title="Manage Staff Roles" icon="ui-icon-tag" 
+                                target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}"
+                                url="/admin/shift/manage/staffroles.xhtml" disabled="#{not authView.canManageFacility()}"/>                                     
+                </p:submenu>  
+                <p:menuitem value="Service Status"  url="/status/index.xhtml" icon="ui-icon-heart" 
+                            target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" 
+                            disabled="#{not authView.isValidUser()}"/>
+            </p:submenu>
+
+            <p:submenu label="Help" icon="ui-icon-info ">
+                <p:menuitem value="Online Help" title="Online Help" 
+                            icon="ui-icon-info" 
+                            url="/help/help.xhtml"   rendered="false"/>
+                <p:submenu label="API Manual" icon="ui-icon-help" rendered="#{authView.isValidUser()}">
+                    <p:menuitem value=" RESTful API V0.1.0" title="API Manual" 
+                                icon="ui-icon-script" target="#{view.viewId == msgs.opLogViewID ? '_blank': ''}" 
+                                url="/help/api-v0.1.0/" />
+                </p:submenu>
+
+                <p:menuitem value=" Report Problems" title="Report Problems/Suggestions" 
+                            icon="ui-icon-alert" target="_blank"
+                            url="https://controls.frib.msu.edu/controlshelp/" 
+                            rendered="false"/> 
+                <p:menuitem value="Report Problems" id="reportProblem" icon="ui-icon-alert"  immediate="true"
+                            title="Report Problems"  onclick="PF('reportProblemWid').show()"/>
+                <p:menuitem value="About" id="aboutMenu" icon="ui-icon-info "  immediate="true"
+                            title="About HourLog"  onclick="PF('aboutPanelWid').show()"/>    
+            </p:submenu>             
+
+            <f:facet name="options">                              
+                <fc:logincomp /> 
+            </f:facet>
+        </p:menubar> 
+
+    </h:form>
+    <ui:include src="switch-facility.xhtml" />
+    <ui:include src="about.xhtml" />
+    <ui:include src="report-problem.xhtml" />
+</ui:composition>

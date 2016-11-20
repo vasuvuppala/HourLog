@@ -1,0 +1,56 @@
+-- 
+-- clean all data from the New Hour Log
+--
+drop procedure if exists clean_all;
+create procedure clean_all()
+begin
+    SET FOREIGN_KEY_CHECKS=0;
+	
+    truncate staff_role;	
+	truncate beam;
+	truncate shift_staff_member;
+	truncate shift;
+	truncate breakdown_event;
+	truncate facility_status_event;
+	truncate vault_event;
+	truncate source_event;
+	truncate mode_event;
+	truncate expr_event;
+	truncate beam_event;
+	truncate source_event;
+	truncate user_preference;
+	truncate user_role;
+	truncate permission;
+	truncate resource;
+	truncate role;
+	truncate snapshot_event;
+    truncate snapshot;
+    
+	truncate event;
+	
+	truncate artifact;
+	truncate log_entry;
+	truncate breakdown_category;
+	truncate breakdown_status;
+	truncate facility_status;
+	truncate beam;
+	truncate beam_system;
+	truncate element;
+	truncate operations_role;
+	truncate shift_status;	
+	truncate logbook;
+	truncate experiment;
+	truncate vault;
+	truncate source;
+	truncate mode;
+	truncate facility;
+	truncate sysuser;
+	
+    -- Cached data may not be removed
+    -- truncate log_cache;
+    -- truncate trouble_report;
+    -- truncate training_record
+    
+	SET FOREIGN_KEY_CHECKS=1;
+end
+##

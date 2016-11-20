@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+        <h:outputText value="Sorry, you are not authorized to generate reports. Please contact #{msgs.title} administrator." 
+                      rendered="#{reportView.canNotGenerateReports()}" />
+
+        <ui:fragment rendered="#{not reportView.canNotGenerateReports()}">
+            <f:metadata>
+                <f:viewParam name="facility" value="#{breakdownReportView.selectedFacility}" 
+                             converter="#{facilityConverter}" required="#{not facesContext.postback}" requiredMessage="Missing or invalid facility"/>           
+                <f:viewParam name="start" value="#{breakdownReportView.startDate}" >
+                    <f:convertDateTime pattern="yyyyMMddHHmmss"  timeZone="#{msgs.timezone}" />
+                </f:viewParam>
+                <f:viewParam name="end" value="#{breakdownReportView.endDate}" >
+                    <f:convertDateTime pattern="yyyyMMddHHmmss" timeZone="#{msgs.timezone}"/>
+                </f:viewParam>    
+                <f:viewAction action="#{breakdownReportView.generateReport()}" />
+            </f:metadata>
+
+            <p:outputPanel id="reportResults">
+                <ui:include src="brkdown-result.xhtml"/>                 
+            </p:outputPanel>
+        </ui:fragment>
+    </ui:define>       
+</ui:composition>

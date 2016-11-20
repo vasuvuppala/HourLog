@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"               
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:h="http://java.sun.com/jsf/html">
+
+    <h:form id="exprReportForm"> 
+        <p:panelGrid id="reportPanel" >
+            <f:facet name="header">
+                <p:row>
+                    <p:column colspan="3">
+                        Experiment Report   
+                    </p:column>
+                </p:row>
+            </f:facet>
+            <p:row>
+                <p:column><h:outputText value="Facility: "/> </p:column>
+                <p:column> 
+                    <p:selectOneMenu value="#{experimentReportView.selectedFacility}"   
+                                     var="p" 
+                                     converter="#{facilityConverter}" 
+                                     filter="true" filterMatchMode="startsWith">    
+                        <!-- TODO: get facilities from a different bean, possibly request scoped -->
+                        <f:selectItems value="#{experimentReportView.facilities}" var="fac" itemLabel="#{fac.facilityName}" itemValue="#{fac}"/>
+                        <p:column>  
+                            #{p.facilityName}  
+                        </p:column> 
+                        <p:column >  
+                            #{p.description}
+                        </p:column> 
+                        <f:validateBean/>
+                    </p:selectOneMenu>
+                </p:column>
+            </p:row>
+            <p:row rendered="true">
+                <p:column>
+                    <h:outputLabel for="experiment" value="Experiment" /></p:column>
+                <p:column>
+                    <p:selectOneMenu id="experiment" value="#{reportView.selectedExperiment}"   
+                                             var="p" panelStyle="width: 400px"
+                                             converter="#{experimentConverter}"  
+                                             filter="true" filterMatchMode="contains">                                       
+                                <f:selectItems value="#{experimentManager.experiments}" var="exp" itemLabel="#{exp.number}" itemValue="#{exp}"/>
+                                <p:column>  
+                                    #{p.number}
+                                </p:column>                               
+                                <p:column >  
+                                    <h:outputText value=" #{p.spokesperson} - #{p.title}"  escape="false"/>  
+                                </p:column> 
+                                <f:validateBean/>
+                            </p:selectOneMenu>
+                        </p:column>
+            </p:row>         
+            <p:row >
+                <p:column><h:outputText value="Start Time "/></p:column>
+                <p:column><p:calendar  id="sdate" value="#{reportView.selectedStartDate}"  
+                                       mindate="#{reportView.minDate}"  maxdate="#{reportView.maxDate}"
+                                       yearRange="#{msgs.calYearRange}" showButtonPanel="true"  
+                                       pattern="#{msgs.calDatePattern}"  title="Format: #{msgs.calDatePattern}"
+                                       navigator="true"  /> </p:column>                   
+            </p:row>
+            <p:row >
+                <p:column><h:outputText value="End Time "/></p:column>                 
+                <p:column><p:calendar  id="edate" value="#{reportView.selectedEndDate}" 
+                                       mindate="#{reportView.minDate}"  maxdate="#{reportView.maxDate}" 
+                                       yearRange="#{msgs.calYearRange}" showButtonPanel="true"  
+                                       pattern="#{msgs.calDatePattern}"  title="Format: #{msgs.calDatePattern}"
+                                       navigator="true" /> </p:column>
+            </p:row>
+            
+        </p:panelGrid>
+        <p:commandButton id="repButton" value="Generate"  action="#{reportView.generateReport('experiment')}"
+                         onclick="this.form.target='_blank'" ajax="false" 
+                         process="@form" disabled="#{reportView.canNotGenerateReports()}"/>
+        <p:blockUI block=":reportInputs" trigger="repButton" >          
+            <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+        </p:blockUI>
+    </h:form>
+</ui:composition>

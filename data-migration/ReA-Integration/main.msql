@@ -1,0 +1,44 @@
+-- 
+-- Hour Log Data Migration: Migrates data from New Hour Log to Olog
+-- Version 0.1
+--
+--
+--       The main program
+-- 
+-- use HourLog2Dev;
+
+delimiter ##
+
+source fix_data.msql
+source clean_all.msql
+source rea_events.msql
+source create_base.msql
+source olog_base.msql
+source migrate_data.msql
+
+--
+-- 
+drop procedure if exists m2o_migrate;
+create procedure m2o_migrate()
+begin
+    set @MIG_SUCCESS := TRUE;	 
+	
+    select 'migration started';
+	call m2o_clean_all();
+	call m2o_create_base();
+    call m2o_rea_base_events();
+	call m2o_olog_base();
+	call m2o_migrate_data();	
+	select 'migration done';
+    
+	if @MIG_SUCCESS = TRUE then
+		select 'Migration successful';
+	else
+	   select 'Migration failed';
+	end if;	
+end
+##
+--
+-- 
+
+delimiter ;

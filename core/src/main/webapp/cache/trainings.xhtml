@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                template="/template/hourlogTemplate.xhtml" >
+    <ui:define name="content" >        
+        <h:form id="expform">
+            <h:outputText value="#{msgs.title}: Training Records" styleClass="heading"/>
+            <p:spacer height="10"/>
+            <h:outputText value="*OIC - Operator In Charge" />
+            <p:dataTable id="trainingTable" var="trec" value="#{trainingView.trainingRecords}"
+                         filteredValue="#{trainingView.filteredTrecords}" sortMode="multiple"
+                         emptyMessage="No users! Strange."
+                         scrollRows="25"  liveScroll="true"  scrollable="true" scrollHeight="#{msgs.experimentsScrollWindow}" >
+                <p:column headerText="Number" sortBy="#{trec.employeeNumber}" 
+                          filterBy="#{trec.employeeNumber}" width="8%">
+                    <h:outputText value="#{trec.employeeNumber}"/>
+                </p:column>
+                <p:column headerText="ID"  filterBy="#{trec.employeeId}" 
+                          filterMatchMode="contains" width="8%">
+                    <h:outputText value="#{trec.employeeId}"/>
+                </p:column>
+                <p:column headerText="Last Name" sortBy="#{trec.lastName}" 
+                          filterBy="#{trec.lastName}" filterMatchMode="contains" >
+                    <h:outputText value="#{trec.lastName}"/>
+                </p:column>
+                <p:column headerText="First Name" sortBy="#{trec.firstName}" 
+                          filterBy="#{trec.firstName}" filterMatchMode="contains" >
+                    <h:outputText value="#{trec.firstName}"/>
+                </p:column>
+                <p:column headerText="Email"  width="15%">
+                    <h:outputText value="#{trec.workEmail}" />
+                </p:column>               
+                <p:column headerText="OIC" sortBy="#{trec.oic}" width="5%" >
+                    <p:selectBooleanCheckbox value="#{trec.oic}" disabled="true"/>                    
+                </p:column>  
+                <f:facet name="footer">     
+                    <h:outputText value="Last Updated On: #{trainingView.trainingService.lastServicedAt}"/>
+                    <p:commandButton id="TrnRefreshBtn"  value="Refresh" icon="ui-icon-refresh"                                         
+                                     action="#{trainingView.refreshTrainingCache()}" process="@this"  
+                                     title="Update the cache with latest experiments"
+                                     update=":expform:trainingTable" style="float: right"
+                                     disabled="#{not authView.isValidUser()}" /> 
+                    <p:blockUI block=":expform:trainingTable" trigger="TrnRefreshBtn" >                   
+                        <p:graphicImage value="/resources/images/ajax-loader.gif" 
+                                        style="background-color: transparent" />                   
+                    </p:blockUI>
+                </f:facet>
+            </p:dataTable>
+        </h:form>      
+    </ui:define>       
+</ui:composition>

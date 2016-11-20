@@ -1,0 +1,9 @@
+#!/bin/bash
+unset http_proxy
+unset https_proxy
+curl -v -k -L -H "Accept: application/json" -X GET 'http://epicsarchiver.nscl.msu.edu/retrieval/data/getData.json?pv=Z013L-C&from=2015-02-10T09:12:06.278-0500&to=2015-02-10T09:22:06.278-0500' | python -m json.tool 
+curl -v -k -L -H "Accept: application/json" -X GET 'http://epicsarchiver.nscl.msu.edu/retrieval/data/getData.json?pv=Z013L-C&from=2015-02-10T09:12:06.278-0500&to=2015-02-10T09:22:06.278-0500' | python -m json.tool 
+curl -v -k -L -H "Accept: application/json" -X GET 'http://epicsarchiver.nscl.msu.edu/retrieval/data/getData.json?pv=Z013L-C&from=2015-02-10T09:12:06.278-0500&to=2015-02-10T09:22:06.278-0500' | python -m json.tool 
+curl -v -k -L -H "Accept: application/json" -X GET 'http://epicsarchiver.nscl.msu.edu/retrieval/data/getData.json?pv=Z013L-C&from=2015-02-10T09:12:06.278-0500&to=2015-02-10T09:22:06.278-0500' | python -m json.tool 
+curl -v -k -L -H "Accept: application/json" -X GET 'http://epicsarchiver.nscl.msu.edu/retrieval/data/getData.json?pv=Z013L-C&from=2015-02-10T09:12:06.278-0500&to=2015-02-10T09:22:06.278-0500' | python -m json.tool 
+curl -v -k -L -H "Accept: application/json" -X GET 'http://epicsarchiver.nscl.msu.edu/retrieval/data/getData.json?pv=Z013L-C&from=2015-02-10T09:12:06.278-0500&to=2015-02-10T09:22:06.278-0500' | python -m json.tool 

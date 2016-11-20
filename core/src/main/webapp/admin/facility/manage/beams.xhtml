@@ -1,0 +1,142 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+
+        <h:form id="manageBeamForm" >
+           
+            <p:dataTable id="manageBeamTable" value="#{manageBeamView.beams}" var="obj" 
+                         scrollRows="25" scrollable="true" scrollHeight="400" liveScroll="true" sortMode="multiple"
+                         rowKey="#{obj.beamId}" selectionMode="single" selection="#{manageBeamView.selectedBeam}"                          
+                         filteredValue="#{manageBeamView.filteredBeams}">  
+                <f:facet name="header" >
+                    <h:outputText value="Manage Beams"/>
+                </f:facet>
+                <p:ajax event="rowSelect" listener="#{manageBeamView.onRowSelect}" update="commandButtons" />
+                <p:column headerText="System" sortBy="#{obj.beamSystem.name}" 
+                          filterBy="#{obj.beamSystem.name}" filterMatchMode="contains" > 
+                    <h:outputText value="#{obj.beamSystem.name}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Element" sortBy="#{obj.element.name}" 
+                          filterBy="#{obj.element.name}" filterMatchMode="contains" >
+                    <h:outputText value="#{obj.element.name}" styleClass="colCenter"/>
+                </p:column>
+                <p:column headerText="Mass Number" sortBy="#{obj.massNumber}" >
+                    <h:outputText value="#{obj.massNumber}" styleClass="colRight"/>
+                </p:column>
+                <p:column headerText="Charge" sortBy="#{obj.charge}" >
+                    <h:outputText value="#{obj.charge}" styleClass="colRight"/>
+                </p:column>
+                <p:column headerText="Energy" sortBy="#{obj.energy}">
+                    <h:outputText value="#{obj.energy}" styleClass="colRight"/>
+                </p:column>
+                <f:facet name="footer">
+                    <p:toolbar id="commandButtons">
+                        <f:facet name="left">
+                            <p:commandButton title="Add" icon="ui-icon-document" update=":beamInputDlg" process="@this" 
+                                             actionListener="#{manageBeamView.onAddCommand}" oncomplete="PF('beamInputWid').show()"/>   
+                            <p:commandButton title="Edit" icon="ui-icon-disk" update=":beamInputDlg"  process="@this"                                          
+                                             actionListener="#{manageBeamView.onEditCommand}"
+                                             oncomplete="PF('beamInputWid').show()" disabled="#{empty manageBeamView.selectedBeam}"/>
+                            <p:commandButton title="Delete" icon="ui-icon-trash" update=":beamInputDlg" process="@this" 
+                                             actionListener="#{manageBeamView.onDeleteCommand}" oncomplete="PF('beamInputWid').show()" 
+                                             disabled="#{empty manageBeamView.selectedBeam}"/>
+                        </f:facet>
+                    </p:toolbar>
+                </f:facet>
+            </p:dataTable>
+        </h:form>
+        <p:dialog id="beamInputDlg" widgetVar="beamInputWid">
+            <h:form id="authROleInputForm">              
+                <p:panelGrid>
+                    <f:facet name="header">
+                        <p:row>
+                            <p:column colspan="2">
+                                <h:outputText value="New Beam" rendered="#{manageBeamView.inputAction == 'CREATE'}"/>
+                                <h:outputText value="Update Existing Beam" rendered="#{manageBeamView.inputAction == 'UPDATE'}"/>
+                                <h:outputText value="Delete Beam" rendered="#{manageBeamView.inputAction == 'DELETE'}"/>
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="beamSys" value="System"/>
+                        </p:column>
+                        <p:column>
+                            <p:selectOneMenu id="beamSys" value="#{manageBeamView.inputAction == 'CREATE'? manageBeamView.inputBeam.beamSystem : manageBeamView.selectedBeam.beamSystem}"  
+                                             converter="#{beamSystemConverter}"
+                                             disabled="#{manageBeamView.inputAction == 'DELETE'}">
+                                <f:selectItems value="#{manageBeamView.beamSystems}" var="b" itemLabel="#{b.name} - #{b.facility.facilityName}" itemValue="#{b}" />
+                            </p:selectOneMenu>                           
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column style="text-align: center">
+                            <p:outputLabel for="element" value="Element"/>
+                        </p:column>
+                        <p:column>
+                            <p:selectOneMenu id="element" value="#{manageBeamView.inputAction == 'CREATE'? manageBeamView.inputBeam.element : manageBeamView.selectedBeam.element}"  
+                                             converter="#{elementConverter}"
+                                             disabled="#{manageBeamView.inputAction == 'DELETE'}">
+                                <f:selectItems value="#{manageBeamView.elements}" var="e" itemLabel="#{e.symbol} - #{e.name}" itemValue="#{e}" />
+                            </p:selectOneMenu>                           
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="massNum"  value="Mass Number" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="massNum" value="#{manageBeamView.inputAction == 'CREATE'? manageBeamView.inputBeam.massNumber: manageBeamView.selectedBeam.massNumber}" 
+                                         required="true" 
+                                         validatorMessage="Mass numberis required" disabled="#{manageBeamView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="charge"  value="Charge" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="charge" value="#{manageBeamView.inputAction == 'CREATE'? manageBeamView.inputBeam.charge : manageBeamView.selectedBeam.charge}" 
+                                         required="true" 
+                                         validatorMessage="Charge required" disabled="#{manageBeamView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <p:outputLabel for="energy"  value="Energy" />
+                        </p:column>
+                        <p:column>
+                            <p:inputText id="energy" value="#{manageBeamView.inputAction == 'CREATE'? manageBeamView.inputBeam.energy : manageBeamView.selectedBeam.energy}" 
+                                         required="true" 
+                                         validatorMessage="Energy required" disabled="#{manageBeamView.inputAction == 'DELETE'}"/>                            
+                        </p:column>
+                    </p:row>
+                    <f:facet name="footer">
+                        <p:row>
+                            <p:column colspan="2">
+                                <p:commandButton type="button" icon="ui-icon-close" value="Cancel" style="float: left;" 
+                                                 onclick="PF('beamInputWid').hide()"/>
+                                <p:commandButton icon="ui-icon-disk" value="Save" style="float: right;"
+                                                 action="#{manageBeamView.saveBeam()}"  
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('beamInputWid').hide()"
+                                                 process="@form"  update="@form :manageBeamForm:manageBeamTable" rendered="#{manageBeamView.inputAction != 'DELETE'}"/>
+                                <p:commandButton icon="ui-icon-trash" value="Confirm Delete" style="float: right;"
+                                                 action="#{manageBeamView.deleteBeam()}" 
+                                                 oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('beamInputWid').hide()"
+                                                 process="@form" update=":manageBeamForm:manageBeamTable" rendered="#{manageBeamView.inputAction == 'DELETE'}"/>                                
+                            </p:column>                
+                        </p:row>
+                    </f:facet>
+
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
+    </ui:define> 
+</ui:composition>

@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"           
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <h:form id="filterForm">                   
+        <p:panelGrid id="filterPanel" columns="4" styleClass="centerPanel noBorders">   
+            <p:column>
+                <p:commandButton id="fastReverseBtn"  action="#{logView.fastReverseEndDate()}"
+                                 icon="ui-icon-seek-first" title="Previous 24 Hours" update=":logform:logTable @form"/>
+                <p:blockUI block="filterPanel" trigger="fastReverseBtn" >          
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                </p:blockUI>
+                <p:commandButton id="reverseBtn" action="#{logView.reverseEndDate()}"  
+                                 icon="ui-icon-seek-prev" title="Previous 9 Hours" update=":logform:logTable @form"/>  
+                <p:blockUI block="filterPanel" trigger="reverseBtn" >          
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                </p:blockUI>
+            </p:column>
+            <p:column id="inf" headerText="Notes">                       
+                <p:outputLabel for="startDt" value="Between " />        
+                <p:calendar id="startDt"  value="#{logView.startDate}" pages="2"  showButtonPanel="true"
+                            mindate="#{logView.minDate}" maxdate="#{logView.maxDate}" yearRange="#{msgs.calYearRange}"
+                            title="Format: #{msgs.calDatePattern}"
+                            pattern="#{msgs.calDatePattern}"  navigator="true" />
+                <p:watermark for="startDt" value=" start date" />
+                <p:outputLabel for="endDt" value=" and " />                       
+                <p:calendar id="endDt" value="#{logView.endDate}" pages="2"   showButtonPanel="true"
+                            title="Format: #{msgs.calDatePattern}"
+                            mindate="#{logView.minDate}" maxdate="#{logView.maxDate}"  yearRange="#{msgs.calYearRange}"
+                            pattern="#{msgs.calDatePattern}" navigator="true"/>
+                <p:watermark for="endDt" value=" end date" />
+                <p:outputLabel  value=" having " rendered="false"/>
+                <h:inputText id="keyword" value="#{logView.keyword}" rendered="false"/>
+                <p:watermark for="keyword" value=" keywords" rendered="false"/>
+            </p:column>
+            <p:column>
+                <p:commandButton id="filterBtn" value="filter" action="#{logView.filterLog()}"  
+                                 icon="ui-icon-play" update=":logform:logTable"/>
+                <p:blockUI block="filterPanel" trigger="filterBtn" >          
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                </p:blockUI>
+                <p:commandButton id="filterResetBtn" value="reset" process="@this"  icon="ui-icon-stop"
+                                 update=":logform:logTable @form" actionListener="#{logView.resetFilter}" 
+                                 action="#{logView.init()}" /> 
+                <p:blockUI block="filterPanel" trigger="filterResetBtn" >          
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                </p:blockUI>
+            </p:column>
+            <p:column>             
+                <p:commandButton id="forwardBtn" action="#{logView.forwardEndDate()}"  
+                                 icon="ui-icon-seek-next" title="Next 9 Hours" update=":logform:logTable @form"/>
+                <p:blockUI block="filterPanel" trigger="forwardBtn" >          
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                </p:blockUI>
+                <p:commandButton id="fastForwardBtn" action="#{logView.fastForwardEndDate()}"  
+                                 icon="ui-icon-seek-end" title="Next 24 Hours" update=":logform:logTable @form"/>
+                <p:blockUI block="filterPanel" trigger="fastForwardBtn" >          
+                    <p:graphicImage value="/resources/images/ajax-loader.gif" style="background-color: transparent" />  
+                </p:blockUI>
+            </p:column>
+        </p:panelGrid>
+    </h:form>
+</ui:composition>

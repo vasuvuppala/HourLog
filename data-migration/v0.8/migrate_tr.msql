@@ -1,0 +1,17 @@
+--
+-- this is temporary. should be replaced by the API
+--
+drop procedure if exists migrate_tr;
+create procedure migrate_tr()
+begin
+	
+	drop table if exists trouble_report;
+	create table trouble_report ( id integer NOT NULL, reported_at datetime NOT NULL, problem text, reporter_name varchar(128) NOT NULL, PRIMARY KEY (id));
+	/* All employees including old ones */
+    insert into trouble_report(id,reported_at,problem,reporter_name)	
+		select r.id,r.date,r.problem, concat(e.empFirstName, ' ',e.empLastName) from TroubleReports.Report r LEFT JOIN Staff.Employees e on r.reporterId = e.empId;
+		
+	select 'Trouble Reports', count(*) from trouble_report;	
+	
+end	
+##

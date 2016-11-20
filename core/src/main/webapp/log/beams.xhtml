@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <p:panelGrid id="beamsInputPanel" >                        
+        <p:row> 
+            <p:column>
+                <h:outputText value="Beams" />
+            </p:column>
+
+            <c:forEach items="#{logView.inputSnapshot.beams}" var="bevent">
+                <p:column rendered="#{not empty bevent.beamSystem.beamList}">  
+                    <h:outputLabel value="#{bevent.beamSystem.name}:" styleClass="beamName"/>
+                    <ui:remove>
+                        <h:outputText styleClass="ui-icon ui-icon-arrowreturn-1-e" style="display: inline-block;"/>
+                    </ui:remove>
+                    <p:spacer width="5"/>
+                    <p:selectOneMenu  tabindex="4" value="#{bevent.beam}" converter="#{beamConverter}" styleClass="beamPos"  
+                                      disabled="#{logView.canNotInputStatus()}">
+                        <f:selectItem   itemLabel="No Beam" itemValue="#{null}"  />
+                        <f:selectItems value="#{hourLogManager.findBeams(bevent.beamSystem)}" var="bm"  
+                                       itemLabel="#{bm.massNumber} #{bm.element.symbol} #{bm.charge}+ #{bm.energy}" 
+                                       itemValue="#{bm}"/> 
+                        <ui:remove>
+                            <f:selectItems value="#{hourLogManager.findBeams(bevent.beamSystem)}" var="bm"  itemLabelEscaped="false"
+                                           itemLabel="&lt;SUP&gt;#{bm.massNumber}&lt;/SUP&gt; #{bm.element.symbol} &lt;SUP&gt;#{bm.charge}+&lt;/SUP&gt; #{bm.energy}" 
+                                           itemValue="#{bm}"/>
+                        </ui:remove>
+                    </p:selectOneMenu>
+                </p:column>                                    
+                <p:column rendered="#{empty bevent.beamSystem.beamList}">
+                    <h:outputLabel value="#{bevent.beamSystem.name}:" styleClass="beamName" />
+                    <p:spacer width="5"/>
+                    <h:outputText styleClass="ui-icon ui-icon-arrowreturn-1-e" style="display: inline-block;" rendered="false"/>
+                    <h:outputLabel value="Mass Number" styleClass="beamName"/>
+                    <p:spacer width="5" />
+                    <h:inputText tabindex="5" value="#{bevent.massNumber}"  size="2" styleClass="beamPos" 
+                                 disabled="#{logView.canNotInputStatus()}" />
+                    <p:spacer width="5" />
+                    <h:outputLabel value="Element" styleClass="beamName"/>
+                    <p:spacer width="5" />
+                    <p:selectOneMenu tabindex="6" value="#{bevent.element}" converter="#{elementConverter}"  
+                                     styleClass="beamPos" disabled="#{logView.canNotInputStatus()}"  >
+                        <f:selectItem   itemLabel="No Beam" itemValue="#{null}"  />
+                        <f:selectItems value="#{hourLogManager.elements}" var="elem" itemLabel="#{elem.name} #{elem.symbol}" itemValue="#{elem}"/>                                            
+                    </p:selectOneMenu> 
+                    <ui:fragment rendered="#{bevent.beamSystem.accelerator}">
+                        <p:spacer width="5" />
+                        <h:outputLabel value="Charge" styleClass="beamName"/>
+                        <p:spacer width="5" />
+                        <h:inputText tabindex="7" value="#{bevent.charge}"  size="2" styleClass="beamPos" 
+                                     disabled="#{logView.canNotInputStatus()}" />
+                        <p:spacer width="5" />
+                        <h:outputLabel value="Energy" styleClass="beamName"/>
+                        <p:spacer width="5" />
+                        <h:inputText tabindex="8" value="#{bevent.energy}"  size="2" styleClass="beamPos" 
+                                     disabled="#{logView.canNotInputStatus()}" />
+                    </ui:fragment>
+                </p:column>
+            </c:forEach>
+        </p:row>   
+    </p:panelGrid>
+</ui:composition>

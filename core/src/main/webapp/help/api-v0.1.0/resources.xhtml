@@ -1,0 +1,438 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"               
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:fc="http://java.sun.com/jsf/composite/comps">
+
+    <h3>Resources</h3>
+    <p> A resource is an entity that is managed by Hour Log. For example, a facility, a vault, a log entry, a shift, a beam etc.
+        The #{msgs.title} API provides access to the resources or entities that Hour Log manages. 
+        These entities and their attributes are described below. Note that the names of attributes are important as they are 
+        used in the various representations of these resources (see Resource Representations Section below).</p>
+    
+    <p:panel header='Resources and Attributes' toggleable="true" >
+        <p:panelGrid style="text-align: left">  
+            <f:facet name="header">  
+                <p:row>  
+                    <p:column>Resource</p:column>  
+                    <p:column>Description</p:column>  
+                    <p:column>Attribute</p:column>  
+                    <p:column>Type</p:column> 
+                    <p:column>Description</p:column> 
+                    <p:column>Examples</p:column> 
+                </p:row>  
+            </f:facet> 
+
+            <p:row>
+                <p:column rowspan="2">availability</p:column>  
+                <p:column rowspan="2">A facility's availability</p:column>  
+                <p:column>days</p:column>  
+                <p:column>Integer</p:column> 
+                <p:column>Period in days</p:column> 
+                <p:column>7</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>percentage</p:column>                    
+                <p:column>Float</p:column> 
+                <p:column>Percentage of the period the facility was up</p:column>  
+                <p:column>98.56</p:column>                     
+            </p:row>
+
+            <p:row>
+                <p:column rowspan="6">beam</p:column>  
+                <p:column rowspan="6">Beam</p:column>  
+                <p:column>system</p:column>  
+                <p:column>String</p:column> 
+                <p:column>System</p:column> 
+                <p:column>K500</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>elementName</p:column>                    
+                <p:column>String</p:column> 
+                <p:column>Element's name</p:column>  
+                <p:column>Calcium</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>symbol</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Symbol</p:column> 
+                <p:column>Ca</p:column> 
+            </p:row> 
+            <p:row>                   
+                <p:column>massNumber</p:column>                    
+                <p:column>Integer</p:column> 
+                <p:column>Mass</p:column>  
+                <p:column>48</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>elementCharge</p:column>  
+                <p:column>Float</p:column> 
+                <p:column>Charge</p:column> 
+                <p:column>0</p:column> 
+            </p:row> 
+            <p:row>                   
+                <p:column>energy</p:column>                    
+                <p:column>Float</p:column> 
+                <p:column>Energy</p:column>  
+                <p:column>12.28</p:column>                     
+            </p:row>
+
+            <p:row>
+                <p:column rowspan="3">employee</p:column>  
+                <p:column rowspan="3">Current or past employee of the lab</p:column>  
+                <p:column>firstName</p:column>  
+                <p:column>String</p:column> 
+                <p:column>First name</p:column> 
+                <p:column>John</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>lastName</p:column>                    
+                <p:column>String</p:column> 
+                <p:column>Last name</p:column>  
+                <p:column>Doe</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>loginId</p:column>  
+                <p:column>String</p:column> 
+                <p:column>(unique) Identifier</p:column> 
+                <p:column>doej</p:column> 
+            </p:row> 
+            
+            <p:row>
+                <p:column rowspan="5">event</p:column>  
+                <p:column rowspan="5">An event that changes the status of a facility.</p:column>  
+                <p:column>occurredAt</p:column>  
+                <p:column>Date</p:column> 
+                <p:column>Time of occurrence</p:column> 
+                <p:column>2014-11-30T09:50:00-05:00</p:column> 
+            </p:row>
+            <p:row>                    
+                <p:column>enteredAt</p:column>  
+                <p:column>Date</p:column> 
+                <p:column>Time it was reported</p:column> 
+                <p:column>2014-11-30T09:50:00-05:00</p:column> 
+            </p:row> 
+            <p:row>                    
+                <p:column>logText</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Text of the log entry</p:column> 
+                <p:column>Key back to experimenters</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>author</p:column>                    
+                <p:column>employee</p:column> 
+                <p:column>User who reported the event</p:column>  
+                <p:column>See employee resource</p:column>                     
+            </p:row>
+            <p:row>                   
+                <p:column>status</p:column>                    
+                <p:column>List of <i>status</i></p:column> 
+                <p:column>List of status changes that happened in this event</p:column>  
+                <p:column>See <i>status</i> resource</p:column>                     
+            </p:row>
+            
+
+            <p:row>
+                <p:column rowspan="3">experiment</p:column>  
+                <p:column rowspan="3">User experiment or maintenance task</p:column>  
+                <p:column>number</p:column>  
+                <p:column>Integer</p:column> 
+                <p:column>(unique) Experiment number</p:column> 
+                <p:column>301</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>title</p:column>                    
+                <p:column>String</p:column> 
+                <p:column>Experiment's name</p:column>  
+                <p:column>Maintenance Shutdown</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>description</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Description of the experiment</p:column> 
+                <p:column>Shutdown for maintenance tasks, both maintenance days and longer maintenance shutdowns</p:column> 
+            </p:row> 
+
+            <p:row>  
+                <p:column rowspan="2">facility</p:column>  
+                <p:column rowspan="2">A collection of devices that run a user experiment, and are monitored for their uptime by a funding agency.</p:column>  
+                <p:column>name</p:column>  
+                <p:column>String</p:column> 
+                <p:column>(unique) Name of the facility</p:column> 
+                <p:column>CCF</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>description</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Description of the facility</p:column> 
+                <p:column>Couple Cyclotron Facility</p:column> 
+            </p:row>
+
+            <p:row>  
+                <p:column rowspan="2">mode</p:column>  
+                <p:column rowspan="2">Facility mode</p:column>  
+                <p:column>name</p:column>  
+                <p:column>String</p:column> 
+                <p:column>(unique) Name of the mode</p:column> 
+                <p:column>COU</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>description</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Description of the mode</p:column> 
+                <p:column>Coupled</p:column> 
+            </p:row>
+
+            <p:row>
+                <p:column rowspan="4">note</p:column>  
+                <p:column rowspan="4">The text part of a log entry</p:column>  
+                <p:column>occurredAt</p:column>  
+                <p:column>Date</p:column> 
+                <p:column>Time of occurrence</p:column> 
+                <p:column>2014-11-30T09:50:00-05:00</p:column> 
+            </p:row>
+            <p:row>                    
+                <p:column>enteredAt</p:column>  
+                <p:column>Date</p:column> 
+                <p:column>Time it was reported</p:column> 
+                <p:column>2014-11-30T09:50:00-05:00</p:column> 
+            </p:row> 
+            <p:row>                    
+                <p:column>logText</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Text of the log entry</p:column> 
+                <p:column>Key back to experimenters</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>author</p:column>                    
+                <p:column>employee</p:column> 
+                <p:column>User who made the log entry</p:column>  
+                <p:column>See employee resource</p:column>                     
+            </p:row>          
+            
+            <p:row>
+                <p:column rowspan="3">report</p:column>  
+                <p:column rowspan="3">Facility report</p:column>  
+                <p:column>name</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Name of the report</p:column> 
+                <p:column>summary</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>description</p:column>                    
+                <p:column>String</p:column> 
+                <p:column>Description</p:column>  
+                <p:column>Facility summary</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>uri</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Relative URI of the sub-resource</p:column> 
+                <p:column>/summary</p:column> 
+            </p:row>
+
+            <p:row>  
+                <p:column rowspan="2">role</p:column>  
+                <p:column rowspan="2">Operations staff role</p:column>  
+                <p:column>name</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Name of the role</p:column> 
+                <p:column>Beam Physicist</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>description</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Description of the role</p:column> 
+                <p:column>Beam Physicist</p:column> 
+            </p:row>                              
+
+            <p:row>
+                <p:column rowspan="4">shift</p:column>  
+                <p:column rowspan="4">Shift</p:column>  
+                <p:column>startTime</p:column>  
+                <p:column>Timestamp</p:column> 
+                <p:column>Shift start time</p:column> 
+                <p:column>2014-09-02T17:43:00-04:00</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>operatorInCharge</p:column>                    
+                <p:column><i>employee</i></p:column> 
+                <p:column>Operator In Charge</p:column>  
+                <p:column>Jane Doe</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>experimenterInCharge</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Experimenter in charge</p:column> 
+                <p:column>John Doe</p:column> 
+            </p:row>
+            <p:row>                    
+                <p:column>staffList</p:column>  
+                <p:column>List of <i>shiftStaff</i></p:column> 
+                <p:column>A list of staff who are on this shift</p:column> 
+                <p:column>See <i>shiftStaff</i> resource</p:column> 
+            </p:row>
+
+            <p:row>  
+                <p:column rowspan="2">shiftStaff</p:column>  
+                <p:column rowspan="2">Shift staff</p:column>  
+                <p:column>employee</p:column>  
+                <p:column><i>employee</i></p:column> 
+                <p:column>Lab employee</p:column> 
+                <p:column>See <i>employee</i> resource</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>role</p:column>  
+                <p:column><i>Role</i></p:column> 
+                <p:column>Employee's role during the shift</p:column> 
+                <p:column>See <i>role</i> resource</p:column> 
+            </p:row>
+
+            <p:row>  
+                <p:column rowspan="2">source</p:column>  
+                <p:column rowspan="2">Source system</p:column>  
+                <p:column>name</p:column>  
+                <p:column>String</p:column> 
+                <p:column>(unique) Name of the source</p:column> 
+                <p:column>ART</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>description</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Description of the source</p:column> 
+                <p:column>Artemis: Room-temperature source</p:column> 
+            </p:row>
+
+            <p:row>
+                <p:column rowspan="3">status</p:column>  
+                <p:column rowspan="3">Facility status</p:column>  
+                <p:column>type</p:column>  
+                <p:column>String</p:column> 
+                <p:column>BEAM, BREAKDOWN, or OTHER</p:column> 
+                <p:column>BEAM</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>name</p:column>                    
+                <p:column>String</p:column> 
+                <p:column>Name of the status. For BEAM type, this is the beam system name. 
+                    For BREAKDOWN type, it is the breakdown category name. 
+                    For OTHER type, this can be SOURCE, VAULT, MODE, SUMMARY, or EXPERIMENT.
+                </p:column>  
+                <p:column>K500, K1200, RF, CTL, VAULT, SUMMARY</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>value</p:column>  
+                <p:column>String</p:column> 
+                <p:column>The status value. For BREAKDOWN type, this value is 'up' or 'down'. 
+                    For BEAM type, this is the mass number, element, charge and energy.
+                    For OTHER type, it is the source name, vault name, experiment number etc.
+                </p:column> 
+                <p:column><i>124 Sn 45 120.00</i> (for BEAM type). <br/> 
+                    <i>down</i> or <i>up</i> (for BREAKDOWN type). <br/>
+                    <i>ART, SOF,</i> or <i>12501</i> (for OTHER type)<br/>                  
+                </p:column> 
+            </p:row> 
+            
+            <p:row>
+                <p:column rowspan="3">summary</p:column>  
+                <p:column rowspan="3">Facility summary</p:column>  
+                <p:column>name</p:column>  
+                <p:column>String</p:column> 
+                <p:column>(unique) Name</p:column> 
+                <p:column>SOF</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>description</p:column>                    
+                <p:column>String</p:column> 
+                <p:column>Description</p:column>  
+                <p:column>Scheduled off</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>timeStamp</p:column>  
+                <p:column>Timestamp</p:column> 
+                <p:column>Time when the summary status was initiated</p:column> 
+                <p:column>2014-09-02T12:00:00-04:00</p:column> 
+            </p:row> 
+
+            <p:row>
+                <p:column rowspan="9">summaryReport</p:column>  
+                <p:column rowspan="9">Facility summary report: current experiment, beams, source, vault, summary, and shift information</p:column>  
+                <p:column>facility</p:column>  
+                <p:column><i>facility</i></p:column> 
+                <p:column>The facility</p:column> 
+                <p:column>See <i>facility</i> resource</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>experiment</p:column>                    
+                <p:column><i>experiment</i></p:column> 
+                <p:column>Current experiment</p:column>  
+                <p:column>See <i>experiment</i> resource</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>mode</p:column>  
+                <p:column><i>mode</i></p:column> 
+                <p:column>Current mode</p:column> 
+                <p:column>See <i>mode</i> resource</p:column> 
+            </p:row> 
+            <p:row>                    
+                <p:column>source</p:column>  
+                <p:column><i>source</i></p:column> 
+                <p:column>Current source</p:column> 
+                <p:column>See <i>source</i> resource</p:column> 
+            </p:row> 
+            <p:row>                    
+                <p:column>vault</p:column>  
+                <p:column><i>vault</i></p:column> 
+                <p:column>Current vault</p:column> 
+                <p:column>See <i>vault</i> resource</p:column> 
+            </p:row>
+            <p:row>                    
+                <p:column>beamList</p:column>  
+                <p:column>List of <i>beam</i></p:column> 
+                <p:column>List of beams in various systems</p:column> 
+                <p:column>See <i>beam</i> resource</p:column> 
+            </p:row>
+            <p:row>                    
+                <p:column>statusList</p:column>  
+                <p:column>List of <i>summary</i></p:column> 
+                <p:column>List of facility summary in the last 24 hours</p:column> 
+                <p:column>See <i>summary</i> resource</p:column> 
+            </p:row>
+            <p:row>                    
+                <p:column>availabilityList</p:column>  
+                <p:column>List of <i>availability</i></p:column> 
+                <p:column>Availabilities the last 1, 7, 30, and 180 days</p:column> 
+                <p:column>See <i>availability</i> resource</p:column> 
+            </p:row>
+            <p:row>                    
+                <p:column>shift</p:column>  
+                <p:column><i>shift</i></p:column> 
+                <p:column>Current shift</p:column> 
+                <p:column>See <i>shift</i> resource</p:column> 
+            </p:row>
+
+            <p:row>
+                <p:column rowspan="5">vault</p:column>  
+                <p:column rowspan="5">Experimental vault</p:column>  
+                <p:column>name</p:column>  
+                <p:column>String</p:column> 
+                <p:column>Name</p:column> 
+                <p:column>K12</p:column> 
+            </p:row>
+            <p:row>                   
+                <p:column>description</p:column>                    
+                <p:column>String</p:column> 
+                <p:column>Description</p:column>  
+                <p:column>K1200</p:column>                     
+            </p:row>
+            <p:row>                    
+                <p:column>active</p:column>  
+                <p:column>Boolean</p:column> 
+                <p:column>Is vault active?</p:column> 
+                <p:column>true</p:column> 
+            </p:row>                 
+        </p:panelGrid>
+    </p:panel>
+</ui:composition>

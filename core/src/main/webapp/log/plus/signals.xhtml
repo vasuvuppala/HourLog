@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:remove> -------------------------- Show signals ------------------- </ui:remove>
+    <p:dialog  id="signalsDlg"  widgetVar="signalsDlgWid" width='60%' dynamic="true"  fitViewport="true">
+        
+        <h:form id="signalsForm">
+            <h:outputText value="From: "/>
+            <h:outputText value="#{archiverView.fromDate}">
+                <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.logHistoryDateFormat}"/>
+            </h:outputText>
+            <br/>
+            <h:outputText value="#{archiverView.signalMessage}"/> 
+            
+            <ui:repeat value="#{archiverView.archiverCharts}" var="chart">
+                <p:chart type="line" model="#{chart}" style="height:250px;" />
+            </ui:repeat>                      
+        </h:form>  
+    </p:dialog>
+
+</ui:composition>

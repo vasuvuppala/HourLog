@@ -1,0 +1,132 @@
+--
+-- Create base data: facilities, beam systems, elements etc
+--
+drop procedure if exists create_base;
+create procedure create_base()
+begin
+
+    insert into logbook(logbook_id,logbook_name,description) values 
+	  (1,'CCF-Operations','CCF Operations Logbook'), 
+	  (2,'ReA-Operations','ReA Operations Logbook');
+      
+    insert into facility(facility_id,facility_name,description, ops_logbook, in_operation) values 
+	  (1,'CCF','Coupled Cyclotron Facility', 1, true), 
+	  (2,'ReA','Re-Accelerator', 2, false);	
+	  
+	insert into beam_system(beam_system_id,name,facility,description) values 
+	  (1,'K500',1,'K500 Cyclotron'), 
+	  (2,'K1200',1,'K1200 Cyclotron'),
+	  (3,'A1900',1,'Fragment Separator'),
+	  (4,'ReA',2,'ReA');
+	  
+	insert into shift_status(status_id,name,description) values 
+	  (1,'on shift','On Shift'), 
+	  (2,'on call','On Call'),
+	  (3,'in house','In House');	
+	
+    insert into experiment(number,a1900_contact,approval_date,completion_date,description,
+                   experiment_completed, hours_approved, hours_requested, on_target_hours,
+                   PAC,spokesperson, title)
+           select exp_number,A1900Contact,approvedDate,completion_date,description,
+                 completed,hoursApproved,hoursRequested,hoursBeamOnTarget,PAC,spokesperson,title
+           from ApprovedExperiments.Experiments;
+           
+	-- insert missing experiment number to check discrepancy in reports. needs to be further investigated
+    -- insert into experiment(number, title, description) values 
+	  -- (13508, 'Missing Experiment', 'added to check for discrepancy in reports - Vasu'),
+      -- (13506, 'Missing Experiment', 'added to check for discrepancy in reports - Vasu');	  	
+    
+	insert into operations_role(op_role_id,name,description) values 
+	  (1,'Operator','Operator'), 
+	  (2,'Source Physicist','Source Physicist'),
+	  (3,'Beam Physicist','Beam Physicist'),
+	  (4,'Device Physicist','Device Physicist'),
+	  (5,'Cryogenics Engineer','Cryogenics Engineer'),
+	  (6,'Beam Coordinator','Beam Coordinator'),
+	  (7,'Maintenance Engineer','Maintenance Engineer');	
+	  
+	insert into element(element_id,symbol,name) select id, abbr, name from HourLog.elements;
+	
+	insert into beam(beam_id,beam_system,element,charge,mass_number,energy) select id,1,element,charge,massNumber,energy from HourLog.beams where belongsTo = 'K500';
+	insert into beam(beam_id,beam_system,element,charge,mass_number,energy) select id,2,element,charge,massNumber,energy from HourLog.beams where belongsTo = 'K1200';
+	
+	-- migrate breakdown categories		
+	insert into breakdown_category(brkcat_id,name,description) 
+	   select id,abbr,description from HourLog.breakdownCategories;
+	   
+	-- breakdown status   
+	/* 
+      insert into breakdown_status(brk_status_id,name,description) 
+	   select id,abbr,description from HourLog.breakdowns;	
+    */
+
+    insert into summary(summary_id,name,description)  
+	  select id,abbr,description from HourLog.summaries;
+
+	insert into source(source_id,facility,name,description)  
+	   select id,1,abbr,description from HourLog.sources;  
+	
+    insert into mode(mode_id,name,description)  
+	  select id,abbr,description from HourLog.modes;
+	
+    insert into vault(vault_id,name,description)  
+	   select id,abbr,description from HourLog.vaults;
+	   
+    insert into external_service(service_id,name,description,status,status_message) values 
+	  (1,'Experiment','Approved experiments', 'up', 'Running'), 
+	  (2,'TR','Trouble Reports','up', 'Running'),
+	  (3,'Training','Employee Training','up', 'Running'),
+      (4,'Olog','Logbook','up', 'Running');
+    
+    -- system properties
+    insert into system_property(name,prop_value)  values
+      ('EXPSVC_BASE_URI', 'expsvcBaseUri'),
+      ('EXPSVC_API_KEY', 'expsvcApiKey'),
+      ('EXPSVC_API_APP','expsvcApiApp'),
+      ('EXPSVC_ENABLED', 'servicesEnabled'),
+      ('TRSVC_BASE_URI','https://enterprise.nscl.msu.edu/troubleReports/api/getTroubleReportsByDate/'),
+      ('TRSVC_ENABLED','true'), 
+      ('TRNGSVC_BASE_URI', 'https://enterprise.nscl.msu.edu/troubleReports/api/getOperatorsInCharge/'),
+      ('TRNGSVC_ENABLED','true'),
+      ('EPICS_ARCHIVER_BASE','http://epicsarchiver.nscl.msu.edu'), 
+      ('String EPICS_ARCHIVER_PATH', '/retrieval/data/getData.json'),
+      ('TR_URL','http://enterprise.nscl.msu.edu/troubleReports/troubleReports/detail'),
+      ('LOG_FUTURE_WINDOW', '15'), 
+      ('LOG_PAST_WINDOW', '720'),
+      ('SMTP_SERVER','exchange.nscl.msu.edu'),
+      ('SMTP_PORT','25'), 
+      ('HOURLOG_FROM_EMAIL','hourlog@frib.msu.edu'),
+      ('TESTTEAM_EMAIL','vuppala@frib.msu.edu');
+    
+    -- control signals
+    insert into control_signal(name,description,facility) values
+       ('Z013L-C', 'Beam Intensity', 1);
+    
+    -- Training records
+    INSERT INTO training_record VALUES 
+       (43,'POE','Poe','David','poe@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (854,'STETSON','Stetson','Jeffry','stetson@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (1507,'BATTIN','Battin','Laurence','battin@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (1644,'BEAL','Beal','Thomas','beal@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (1645,'GALBRAIT','Galbraith','Ken','galbraith@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (1915,'WEST','West','Genevieve','west@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (1987,'RENCSOK','Rencsok','Randall','rencsok@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (2000,'KRAUSE','Krause','Shannon','krause@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (2808,'MOLLON','Mollon','Eric','mollon@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (3104,'PAQUETTJ','Paquette','Jay','paquettj@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (3331,'SWANSONL','Swanson','Lucas','Swansonl@nscl.msu.edu',1,'2015-02-28 16:00:01'),
+       (3387,'COLEP','Cole','Peter','colep@nscl.msu.edu',1,'2015-02-28 16:00:01');
+
+    -- 
+    --
+	select 'Created ', count(*), 'beams' from beam;
+	select 'Created ', count(*), 'element' from element;
+	select 'Created ', count(*), 'facilities' from facility;
+	select 'Created ', count(*), 'beam systems' from beam_system;
+	select 'Created ', count(*), 'operations roles' from operations_role;
+	select 'Created ', count(*), 'logbooks' from logbook;
+	select 'Created ', count(*), 'shift status' from shift_status;
+	select 'Created ', count(*), 'breakdown category' from breakdown_category;
+	select 'Created ', count(*), 'breakdown status' from breakdown_status;
+end	
+##

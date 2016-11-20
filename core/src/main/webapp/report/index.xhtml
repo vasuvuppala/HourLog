@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                template="/template/hourlogTemplate.xhtml" 
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:define name="content"> 
+        <h:outputText value="Sorry, you are not authorized to generate reports. Please contact #{msgs.title} administrator." 
+                      rendered="#{reportView.canNotGenerateReports()}" />
+        <p:panel  id="reportInputs" rendered="#{not reportView.canNotGenerateReports()}">           
+            <p:panelGrid styleClass="noBorders" >
+                <p:row>
+                    <p:column>
+                        <ui:include src="summary/summary-input.xhtml"/>
+                    </p:column>
+                    <p:column>
+                        <ui:include src="breakdown/brkdown-input.xhtml"/>
+                    </p:column>
+                    <p:column>
+                        <ui:include src="experiment/expriment-input.xhtml"/>
+                    </p:column>
+                    <p:column>
+                        <ui:include src="beam/beam-input.xhtml"/>
+                    </p:column>
+                </p:row>
+            </p:panelGrid>
+        </p:panel>    
+    </ui:define>       
+</ui:composition>

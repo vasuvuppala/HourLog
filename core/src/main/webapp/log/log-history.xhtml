@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:remove> ---------------------------------- Log History --------------------</ui:remove>  
+    <p:dialog id="logHistoryPanel"  widgetVar="logHistoryWid" header="Edit History" width="80%" hideEffect="clip" dynamic="true">       
+        <h:form id="logHistoryForm" >
+            <p:dataTable id="logHistoryTable" var="histLogEnt" value="#{logView.editedLogEntries}"  
+                         paginator="false"  resizableColumns="true"   rowIndexVar="rowIndex"                                 
+                         scrollable="true" emptyMessage="No edit history found. That's strange. Most probably someting went wrong on the server."> 
+                <p:column headerText="Entry Time" width="15%" styleClass="logColumn">
+                    <h:outputText value="Current" rendered="#{false and rowIndex == 0}"/>
+                    <h:outputText value="#{histLogEnt.event.eventId}," rendered="false"/>
+                    <h:outputText value="#{histLogEnt.event.note}," rendered="false"/>
+                    <h:outputText value="#{histLogEnt.logEntry.logEntryId}," rendered="false"/>                    
+                    <h:outputText value="#{histLogEnt.logEntry.enteredAt}" >
+                        <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.logHistoryDateFormat}"/>
+                    </h:outputText>
+                    <p:spacer width="5"/>
+                    <h:outputText value="#{histLogEnt.logEntry.author}"/>                              
+                </p:column>
+                <p:column headerText="Occurrence Time" width="15%" styleClass="logColumn">
+                    <h:outputText value="#{histLogEnt.logEntry.occurredAt}" >
+                        <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.logHistoryDateFormat}"/>
+                    </h:outputText>
+                </p:column>
+                <p:column headerText="Notes" >
+                    <h:outputText value="#{histLogEnt.logEntry.logText}" escape="false"/>
+                    <h:outputText title="log text was modified" styleClass="ui-icon ui-icon-scissors blueIcon iconDisplay" 
+                                  rendered="#{histLogEnt.logTextChanged}" />
+
+                    <p:panel styleClass="plainPanel" rendered="#{not empty histLogEnt.logEntry.artifactList}" >
+                        <h:outputText value="Attachments: "/> 
+                        <ui:repeat var="art" value="#{histLogEnt.logEntry.artifactList}" >                                                 
+                            <p:link href="#{appProperties.TR_URL}/#{art.resourceId}" value=" #{art.name}"  
+                                    target="_blank" rendered="#{art.type == 't'}" />
+                            <p:link href="#{appProperties.LOGBOOK_ATTACHMENT_URL}/#{histLogEnt.logEntry.logEntryId}/#{art.resourceId}" value=" #{art.name}"  
+                                    rendered="#{art.type == 'd'}" />
+                            <ui:remove>
+                                <h:outputLink value="#{appProperties.TR_URL}/#{art.resourceId}"   
+                                              target="_blank" rendered="#{art.type == 't'}" >                       
+                                    <h:outputText value="#{art.name} "/>
+                                </h:outputLink>
+                                <p:commandLink  ajax="false"  value=" #{art.name}"                                       
+                                                rendered="#{art.type == 'd'}">                            
+                                    <f:setPropertyActionListener target="#{logView.downloadArtifact}" value="#{art}" />
+                                    <p:fileDownload value="#{logView.downloadedFile}" />  
+                                </p:commandLink>
+                                <h:outputText styleClass="ui-icon ui-icon-arrow-1-s" style="display: inline-block;"/>
+                            </ui:remove>
+                            <p:spacer width="5" />
+                        </ui:repeat> 
+                    </p:panel>
+                    <p:panel styleClass="plainPanel" rendered="#{not empty histLogEnt.event.beamEventList}">                
+                        <h:outputText value="Beams: " />
+                        <ui:repeat var="bevent" value="#{histLogEnt.event.beamEventList}" >                              
+                            <h:outputText value=" #{bevent.beamSystem.name}:  " />
+                            <h:outputText value="&lt;SUP&gt;#{bevent.beam.massNumber}&lt;/SUP&gt;#{bevent.beam.element.symbol}&lt;SUP&gt;#{bevent.beam.charge}+&lt;/SUP&gt; #{bevent.beam.energy}" 
+                                          rendered="#{not empty bevent.beam}" styleClass="newEvent" escape="false"/>
+                            <ui:fragment rendered="#{empty bevent.beam and not empty bevent.element}">
+                                <h:outputText value="&lt;SUP&gt;#{bevent.massNumber}&lt;/SUP&gt;#{bevent.element.symbol}" styleClass="newEvent" escape="false"/>
+                                <h:outputText value="&lt;SUP&gt;#{bevent.charge}+&lt;/SUP&gt; " styleClass="newEvent" escape="false" rendered="#{bevent.charge != null}"/>
+                                <h:outputText value=" #{bevent.energy} " styleClass="newEvent"  rendered="#{bevent.energy != null}"/>
+                            </ui:fragment>
+                            <h:outputText value="None" 
+                                          rendered="#{empty bevent.beam and empty bevent.element}" styleClass="newEvent" escape="false"/>
+                        </ui:repeat>
+                    </p:panel>
+                </p:column>
+                <p:column headerText="Exp" width="4%" styleClass="logColumn" >
+                    <h:outputText value="#{histLogEnt.snapshot.experiment.number}" title="#{histLogEnt.snapshot.experiment.spokesperson} #{histLogEnt.snapshot.experiment.title}"
+                                  styleClass="#{not empty histLogEnt.event.exprEventList ? 'newEvent': ''}">
+                        <f:convertNumber pattern="00000"  minIntegerDigits="5"/>
+                    </h:outputText>
+                </p:column>
+                <p:column headerText="Sum" width="4%" styleClass="logColumn">
+                    <h:outputText value="#{histLogEnt.snapshot.summary.name}" 
+                                  styleClass="#{not empty histLogEnt.event.summaryEventList ? 'newEvent': ''}"/> 
+                </p:column>
+                <p:column headerText="Brk" width="4%" styleClass="logColumn">
+                    <ui:repeat value="#{histLogEnt.snapshot.breakdowns}" var="brks">
+                        <h:outputText value="#{brks.category.name} "  rendered="#{brks.failed}"
+                                      styleClass="#{not empty histLogEnt.event.breakdownEventList ? 'newEvent': ''}"/>
+                    </ui:repeat>                                            
+                </p:column>
+                <p:column headerText="Src" width="4%" styleClass="logColumn">
+                    <h:outputText value="#{histLogEnt.snapshot.source.name}" styleClass="#{not empty histLogEnt.event.sourceEventList ? 'newEvent': ''}"/>                        
+                </p:column>
+                <p:column headerText="Vault" width="4%" styleClass="logColumn">
+                    <h:outputText value="#{histLogEnt.snapshot.vault.name}" styleClass="#{not empty histLogEnt.event.vaultEventList ? 'newEvent': ''}"/>                            
+                </p:column>
+            </p:dataTable>
+            <h:outputText value="*Entry Time is the time the log entry was entered into the system whereas Occurrence Time is the time an event occurred as reported by the author."/>
+        </h:form>
+    </p:dialog>      
+</ui:composition>

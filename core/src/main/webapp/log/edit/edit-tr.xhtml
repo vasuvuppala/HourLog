@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:remove> -------------------------- Add TR------------------- </ui:remove>
+    <p:dialog  id="TReditPanel" header="Add Trouble Report" widgetVar="trEditDialog" width='90%' dynamic="true">
+        <h:form id="TReditForm">
+            <p:dataTable id="TRaddTable" value="#{troubleReportsView.lazyTRModel}" var="tr" 
+                         selection="#{troubleReportsView.selectedTroubleReport}"
+                         rowKey="#{tr.id}" paginator="true" rows="#{msgs.trDialogRows}"
+                         paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                         lazy="true"
+                         selectionMode="single"
+                         filteredValue="#{troubleReportsView.filteredReports}"  >
+
+                <p:column headerText="TR#" sortBy="#{tr.id}" filterBy="#{tr.id}" width="10%">
+                    <h:outputLink value="#{appProperties.TR_URL}/#{tr.id}" target="_blank" >    
+                        <h:outputText value="#{tr.id}" />
+                    </h:outputLink>                  
+                </p:column>
+                <p:column headerText="Date" sortBy="#{tr.reportDate}" width="10%">
+                    <h:outputText value="#{tr.reportDate}">
+                        <f:convertDateTime type="both" timeZone="#{msgs.timezone}" pattern="#{msgs.dateFormatLong}"/>
+                    </h:outputText>
+                </p:column>
+                <p:column headerText="Reporter" filterBy="#{tr.employeeName}" filterMatchMode="contains"  width="10%">
+                    <h:outputText value="#{tr.employeeName}"/>
+                </p:column>
+                <p:column headerText="System" filterBy="#{tr.system}" width="10%">
+                    <h:outputText value="#{tr.system}"/>
+                </p:column>
+                <p:column headerText="Description" filterBy="#{tr.problem}" filterMatchMode="contains" >
+                    <h:outputText value="#{tr.problem}"/>
+                </p:column>
+            </p:dataTable>
+            <p:toolbar>
+                <f:facet  name="right">                                          
+                    <p:commandButton value="Cancel" type="button" icon="ui-icon-close"                                         
+                                     onclick="PF('trEditDialog').hide()" 
+                                     disabled="#{logView.canNotCreateLog()}"/>
+                    <p:separator />
+                    <p:commandButton id="TRrefreshBtn"  value="Refresh" icon="ui-icon-refresh"                                         
+                                     action="#{troubleReportsView.refreshTRs()}" process="@this" update=":TRaddForm:TRaddTable" 
+                                     disabled="#{logView.canNotCreateLog()}"/>
+
+                    <p:separator /> 
+                    <p:commandButton value="Save" icon="ui-icon-disk" 
+                                     update=":editLogForm:attachments" 
+                                     process="@form" actionListener="#{logView.addTR}"
+                                     oncomplete="if (!args.validationFailed &amp;&amp; args.success) PF('trEditDialog').hide()" 
+                                     disabled="#{logView.canNotCreateLog()}"/> 
+                </f:facet>
+            </p:toolbar> 
+            <p:blockUI block=":TReditForm:TRaddTable" trigger=":TReditForm:TRrefreshBtn" >                   
+                <p:graphicImage value="/resources/images/ajax-loader.gif" 
+                                style="background-color: transparent" />                   
+            </p:blockUI>
+        </h:form>  
+    </p:dialog>
+
+</ui:composition>

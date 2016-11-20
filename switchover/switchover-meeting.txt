@@ -1,0 +1,27 @@
+Switch-over Plan
+
+Availability of the team:
+   Andreas
+   Vasu
+   Tom
+   Dong
+   Adam
+   Eric
+   Josh
+   Nick
+
+Monitoring: 
+   OS: CPU, Load, Memory
+   App Server: CPU, Memory, Threads
+   Database: 
+   DataU: 
+  
+Upgrades:
+   OS:
+   GF:
+   Application:
+   External Services: TR, Training, Experiments, Olog
+   
+Hallway Display:
+
+Managing DataU server:   

@@ -1,0 +1,160 @@
+--
+-- Migrate data from CCF Operations logbook to Olog
+--
+drop procedure if exists m2o_setup_temps;
+create procedure m2o_setup_temps()
+begin  
+    -- 
+    -- olog entries
+    --
+    drop table  if exists temp_entries;
+    create table temp_entries like olog.entries;
+    insert temp_entries select * from olog.entries;
+    alter table temp_entries 
+       add column hl_id INT,
+       add column ccf BOOL DEFAULT 0;
+    create index hl_id_idx on temp_entries (hl_id);
+    
+    -- select entered_at,'Active',log_entry_id, 1
+    insert into temp_entries(created, state, hl_id, ccf)
+       select occurred_at,'Active',log_entry_id, 1 
+          from log_entry
+          where obsoleted_by is null;
+    
+    --
+    -- update note column in the event table
+    --
+    create table temp_event
+      select e.event_id, t.id as entry_id, hl_id  
+      from temp_entries t inner join event e on t.hl_id = e.note;
+    create index temp_event_idx on temp_event(event_id);
+    update event e
+    inner join temp_event te on e.event_id = te.event_id
+    set e.note = te.entry_id;
+    
+    --
+    --  attachments
+    --
+    drop table if exists temp_attachment;
+    create table temp_attachment
+      select a.*,t.id as entry_id 
+      from artifact a inner join temp_entries t on a.log_entry = t.hl_id 
+      where a.type = 'd';
+     
+    --
+    -- logs
+    --
+    drop table  if exists temp_logs;
+    create table temp_logs like olog.logs;
+    insert temp_logs select * from olog.logs;
+    alter table temp_logs 
+            add column sysuser INT,
+            add column obsolete BOOL, 
+            add column ccf BOOL DEFAULT 0,
+            add column hl_id INT,
+            add column occurred datetime;
+    
+    -- insert obsoleted (history) log entries
+    insert into temp_logs(entry_id, description, modified,owner,state,level,sysuser,obsolete,occurred,ccf,hl_id)
+       select e.id, l.log_text, l.entered_at, l.author, 'Active', 'Info', l.sysuser, 
+              1, l.occurred_at, 1, l.log_entry_id
+          from temp_entries e inner join log_entry l on e.hl_id = l.obsoleted_by
+          where l.obsoleted_by is not null;
+    
+    -- insert current log entries
+    insert into temp_logs(entry_id, description, modified,owner,state,level,sysuser,obsolete,occurred,ccf,hl_id)    
+       select e.id, l.log_text, entered_at, l.author, 'Active', 'Info', l.sysuser, 0, l.occurred_at,1, l.log_entry_id
+          from temp_entries e inner join log_entry l on e.hl_id = l.log_entry_id
+          where l.obsoleted_by is null;    
+          
+    -- compute log version
+    set @v := 0;
+    set @e := -1;
+    drop table if exists temp_version;
+    create table temp_version 
+        select id, @v := IF(@e = entry_id, @v + 1,1) as version, @e := entry_id as entry
+        from temp_logs
+        where ccf is true
+        order by entry_id, modified;
+    update temp_logs l
+        inner join temp_version v on l.id = v.id
+        set l.version = v.version;        
+end
+##
+
+drop procedure if exists m2o_migrate_logs;
+create procedure m2o_migrate_logs()
+begin     
+    DECLARE ccflogbook INT; 
+    
+    --
+    -- transfer records back
+    --
+    insert into olog.entries(id,created,state) 
+        select id,created,state from temp_entries where ccf is true;
+    
+    insert into olog.logs(id,modified,source,owner,description,state,level,entry_id,version) 
+        select id,modified,source,owner,description,state,level,entry_id,version 
+        from temp_logs where ccf is true; 
+        
+    --
+    -- bitemporal_log
+    --
+    
+    set @prev = '3197-09-13 18:00:00'; 
+    set @e := null;
+    insert into olog.bitemporal_log(log_id, recordinterval, recordinterval_0, 
+               validityinterval, validityinterval_0, entry_id)
+       select l.id, @prev := IF(@e = entry_id, @prev, '3197-09-13 18:00:00') as recint, @prev := l.modified as recint0, '3197-09-13 18:00:00' as valid, l.occurred, @e := l.entry_id as entry
+           from temp_logs l 
+           where l.ccf is true
+           order by l.entry_id, l.modified desc;
+            
+    --
+    -- log-logbooks 
+    --
+    insert into olog.logbooks(name, owner, is_tag, state) values('CCF Operations', 'LAB', 0, 'Active');
+    select id into ccflogbook from olog.logbooks where name = 'CCF Operations';
+    insert into olog.logs_logbooks(log_id, logbook_id)
+       select id, ccflogbook from temp_logs where ccf is true;
+end
+##
+
+drop procedure if exists m2o_migrate_artifact;
+create procedure m2o_migrate_artifact()
+begin       
+    DECLARE HLproperty INT;
+    DECLARE trAttribute INT;
+    DECLARE authorAttribute INT;
+    --
+    -- Trouble reports and other properties
+    --
+    select id into HLproperty from olog.properties where name = 'HourLog';
+    select id into trAttribute from olog.attributes where name = 'TRnumber' and property_id = HLproperty;
+    select id into authorAttribute from olog.attributes where name = 'AuthorId' and property_id = HLproperty;
+    
+    -- trouble reports
+    insert into olog.logs_attributes(log_id,attribute_id,value)
+       select l.id,trAttribute,a.resource_id
+       from temp_logs l inner join artifact a on l.hl_id = a.log_entry
+       where l.ccf is true and a.type = 't';
+    
+    -- author (system user)
+    insert into olog.logs_attributes(log_id,attribute_id,value)
+       select l.id,authorAttribute,l.sysuser
+       from temp_logs l
+       where l.ccf is true;        
+end	
+##
+
+drop procedure if exists m2o_migrate_data;
+create procedure m2o_migrate_data()
+begin
+   select 'setting temp tables ...';
+   call m2o_setup_temps();
+   select 'migrating log entries ...';
+   call m2o_migrate_logs();
+   select 'migrating artifact ...';
+   call m2o_migrate_artifact();
+end
+##

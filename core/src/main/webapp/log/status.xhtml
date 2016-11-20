@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <p:panelGrid id="inputPanelStat">
+        <p:row>
+            <p:column>
+                <h:outputLabel value="Mode" />
+            </p:column>
+            <p:column>
+                <h:outputLabel value="Source" />
+            </p:column>
+            <p:column>
+                <h:outputLabel value="Vault" />
+            </p:column>
+            <p:column>
+                <h:outputLabel value="Summary" />
+            </p:column>
+            <p:column>
+                <h:outputLabel value="Experiment" />
+            </p:column>
+        </p:row>
+        <p:row>                      
+            <p:column>
+                <p:selectOneMenu tabindex="6" value="#{logView.inputSnapshot.mode}" 
+                                 converter="#{modeConverter}" disabled="#{logView.canNotInputStatus()}">                            
+                    <f:selectItems value="#{hourLogManager.modes}" var="opt" 
+                                   itemLabel="#{opt.name}" itemValue="#{opt}"  itemDescription="#{opt.description}"/>                                                                        
+                </p:selectOneMenu> 
+            </p:column>
+            <p:column>
+                <p:selectOneMenu tabindex="7" value="#{logView.inputSnapshot.source}"
+                                 converter="#{sourceConverter}" disabled="#{logView.canNotInputStatus()}">                            
+                    <f:selectItems value="#{hourLogManager.sources}" var="opt" itemLabel="#{opt.name}" itemValue="#{opt}" itemDescription="#{opt.description}"/>                                                                        
+                </p:selectOneMenu> 
+            </p:column>
+            <p:column>
+                <p:selectOneMenu  tabindex="8" value="#{logView.inputSnapshot.vault}" 
+                                  converter="#{vaultConverter}" disabled="#{logView.canNotInputStatus()}" >                           
+                    <f:selectItems value="#{hourLogManager.vaults}" var="opt" itemLabel="#{opt.name}" itemValue="#{opt}" itemDescription="#{opt.description}"/>                                                                        
+                </p:selectOneMenu>
+            </p:column>
+            <p:column>
+                <p:selectOneMenu tabindex="9" value="#{logView.inputSnapshot.summary}" 
+                                 converter="#{summaryConverter}" disabled="#{logView.canNotInputStatus()}" >                         
+                    <f:selectItems value="#{hourLogManager.summaries}" var="opt" itemLabel="#{opt.name}" itemValue="#{opt}" itemDescription="#{opt.description}"/>                                                                        
+                </p:selectOneMenu>
+            </p:column>
+            <p:column>
+                <p:selectOneMenu  tabindex="10" value="#{logView.inputSnapshot.experiment}"   
+                                  effect="fade" var="p"                              
+                                  converter="#{experimentConverter}"  rendered="true"
+                                  filter="true" filterMatchMode="startsWith"  
+                                  disabled="#{logView.canNotInputStatus()}" >                                       
+                    <f:selectItems value="#{experimentManager.experiments}" var="exp" itemLabel="#{exp.number}" itemValue="#{exp}"/>
+                    <p:column>  
+                        #{p.number}
+                    </p:column> 
+                    <p:column >  
+                        <h:outputText value="#{p.title}" escape="false"/>  
+                    </p:column> 
+                    <f:validateBean/>
+                </p:selectOneMenu>
+            </p:column>
+        </p:row>
+    </p:panelGrid>
+
+</ui:composition>
