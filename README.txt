@@ -9,3 +9,5 @@ It contains the following directories
 4. docs:           Documentation
 5. pm:             Project Management 
 6. qa:             Quality Assurance
+
+Test
